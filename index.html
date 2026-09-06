@@ -1,0 +1,2099 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>💰 Sistema Financeiro Completo - V.3.0 Pro</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+:root {
+--bg: #0f1117; --sidebar: #161822; --card: #1c1f2e; --card2: #242838;
+--accent: #6c5ce7; --accent2: #a29bfe; --green: #00b894; --green2: #55efc4;
+--red: #e17055; --red2: #ff7675; --yellow: #fdcb6e; --blue: #74b9ff;
+--purple: #a29bfe; --transfer: #fd79a8; --transfer2: #ff7675;
+--text: #dfe6e9; --text2: #b2bec3; --border: #2d3148; --input-bg: #1e2130;
+}
+body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: var(--bg); color: var(--text); height: 100vh; overflow: hidden; display: flex; }
+.sidebar { width: 240px; min-width: 240px; background: var(--sidebar); border-right: 1px solid var(--border); display: flex; flex-direction: column; height: 100vh; z-index: 100; position: relative; transition: width .3s, min-width .3s; }
+.sidebar-toggle { position: absolute; right: -14px; top: 70px; width: 28px; height: 28px; border-radius: 50%; background: var(--accent); border: 2px solid var(--border); color: #fff; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 10px; transition: all .3s; z-index: 101; padding: 0; }
+.sidebar-toggle:hover { background: var(--accent2); transform: scale(1.1); }
+.sidebar.minimized { width: 60px; min-width: 60px; }
+.sidebar.minimized .logo span:last-child, .sidebar.minimized nav button span:not(.icon) { display: none; }
+.sidebar.minimized nav button { justify-content: center; padding: 14px; }
+.sidebar.minimized .sidebar-toggle { right: -14px; }
+.sidebar.minimized .sidebar-toggle .toggle-icon { transform: rotate(180deg); }
+.sidebar .logo { padding: 24px 20px; font-size: 22px; font-weight: 800; color: var(--accent2); border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 10px; }
+.sidebar .logo span { font-size: 28px; }
+.sidebar nav { flex: 1; padding: 12px 0; }
+.sidebar nav button { width: 100%; padding: 14px 24px; background: none; border: none; color: var(--text2); font-size: 14px; cursor: pointer; display: flex; align-items: center; gap: 12px; transition: all .2s; text-align: left; }
+.sidebar nav button:hover { background: var(--card); color: var(--text); }
+.sidebar nav button.active { background: var(--accent); color: #fff; font-weight: 600; }
+.sidebar nav button .icon { font-size: 18px; width: 24px; text-align: center; }
+.main { flex: 1; display: flex; flex-direction: column; height: 100vh; overflow: hidden; transition: margin-left .3s; }
+.topbar { padding: 16px 28px; background: var(--sidebar); border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; min-height: 60px; }
+.topbar h2 { font-size: 20px; font-weight: 700; }
+.topbar .date-display { color: var(--text2); font-size: 13px; }
+	.content { flex: 1; overflow-y: auto; padding: 20px; display: flex; flex-direction: column; align-items: stretch; }
+    .tab-content { width: 100%; max-width: 100%; display: none; }
+.tab-content.active { display: flex; flex-direction: column; width: 100%; }
+
+/* --- ESTILOS GERAIS --- */
+.cards-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; margin-bottom: 24px; width: 100%; }
+	.stat-card { 
+        background: linear-gradient(145deg, var(--card), var(--card2)); 
+        border: 1px solid var(--border); 
+        border-radius: 20px; 
+        padding: 24px; 
+        position: relative; 
+        overflow: hidden; 
+        box-shadow: 0 10px 20px rgba(0,0,0,0.2);
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+    .stat-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 15px 30px rgba(0,0,0,0.3);
+        border-color: var(--accent);
+    }
+	.stat-card::after { 
+        content: ''; 
+        position: absolute; 
+        top: -50%; 
+        right: -50%; 
+        width: 150px; 
+        height: 150px; 
+        background: rgba(255,255,255,0.03); 
+        border-radius: 50%; 
+        z-index: 0;
+    }
+	.stat-card .label { 
+        font-size: 11px; 
+        color: var(--text2); 
+        text-transform: uppercase; 
+        letter-spacing: 1.5px; 
+        margin-bottom: 10px; 
+        font-weight: 600;
+        position: relative;
+        z-index: 1;
+    }
+	.stat-card .value { 
+        font-size: 32px; 
+        font-weight: 800; 
+        position: relative;
+        z-index: 1;
+        letter-spacing: -1px;
+    }
+	.stat-card.receita .value { color: var(--green2); text-shadow: 0 0 15px rgba(0,184,148,0.3); }
+	.stat-card.despesa .value { color: var(--red2); text-shadow: 0 0 15px rgba(225,112,85,0.3); }
+	.stat-card.saldo .value { color: var(--blue); text-shadow: 0 0 15px rgba(116,185,255,0.3); }
+	.stat-card.pendente .value { color: var(--yellow); text-shadow: 0 0 15px rgba(253,203,110,0.3); }
+
+.filter-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 12px; margin-bottom: 20px; width: 100%; }
+.filter-card { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 14px 12px; text-align: center; transition: all .2s; cursor: pointer; }
+.filter-card:hover { transform: translateY(-2px); border-color: var(--accent); }
+.filter-card.active { border-color: var(--accent); background: rgba(108,92,231,.15); }
+.filter-card .fc-icon { font-size: 22px; margin-bottom: 6px; }
+.filter-card .fc-label { font-size: 10px; color: var(--text2); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 4px; }
+.filter-card .fc-value { font-size: 18px; font-weight: 700; }
+.filter-card.fc-receita .fc-value { color: var(--green2); }
+.filter-card.fc-despesa .fc-value { color: var(--red2); }
+.filter-card.fc-pago .fc-value { color: var(--blue); }
+.filter-card.fc-pendente .fc-value { color: var(--yellow); }
+.filter-card.fc-transfer .fc-value { color: var(--transfer2); }
+.filter-card.fc-resultado .fc-value { color: var(--blue); }
+.filter-card.fc-resultado-negativo .fc-value { color: var(--red2); }
+
+	.table-wrap { 
+        background: var(--card); 
+        border: 1px solid var(--border); 
+        border-radius: 20px; 
+        overflow: hidden; 
+        margin-bottom: 24px; 
+        box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        width: 100%;
+    }
+	.table-toolbar { 
+        padding: 20px 24px; 
+        display: flex; 
+        flex-wrap: wrap; 
+        gap: 12px; 
+        align-items: center; 
+        border-bottom: 1px solid var(--border);
+        background: rgba(255,255,255,0.01);
+    }
+	.table-toolbar .title { 
+        font-weight: 800; 
+        font-size: 18px; 
+        margin-right: auto; 
+        color: var(--text);
+        letter-spacing: -0.5px;
+    }
+table { width: 100%; border-collapse: collapse; }
+thead th { padding: 12px 16px; text-align: left; font-size: 11px; text-transform: uppercase; letter-spacing: 1px; color: var(--text2); background: var(--card2); border-bottom: 1px solid var(--border); white-space: nowrap; }
+tbody td { padding: 12px 16px; border-bottom: 1px solid var(--border); font-size: 13px; white-space: nowrap; }
+tbody tr:hover { background: rgba(108,92,231,.08); }
+tbody tr:last-child td { border-bottom: none; }
+
+.badge { padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: 600; }
+.badge-receita { background: rgba(0,184,148,.15); color: var(--green2); }
+.badge-despesa { background: rgba(225,112,85,.15); color: var(--red2); }
+.badge-transfer { background: rgba(253,121,168,.15); color: var(--transfer2); }
+.badge-pago { background: rgba(0,184,148,.15); color: var(--green2); }
+.badge-pendente { background: rgba(253,203,110,.15); color: var(--yellow); }
+
+.btn { padding: 8px 16px; border: none; border-radius: 8px; cursor: pointer; font-size: 13px; font-weight: 600; transition: all .2s; display: inline-flex; align-items: center; gap: 6px; }
+.btn-primary { background: var(--accent); color: #fff; }
+.btn-primary:hover { background: #5b4bd5; }
+.btn-success { background: var(--green); color: #fff; }
+.btn-success:hover { background: #00a381; }
+.btn-danger { background: var(--red); color: #fff; }
+.btn-danger:hover { background: #c0593f; }
+.btn-transfer { background: var(--transfer); color: #fff; }
+.btn-transfer:hover { background: #e8437a; }
+.btn-sm { padding: 5px 10px; font-size: 11px; }
+.btn-outline { background: transparent; border: 1px solid var(--border); color: var(--text2); }
+.btn-outline:hover { border-color: var(--accent); color: var(--accent2); }
+.actions-cell { display: flex; gap: 4px; }
+
+.form-group { margin-bottom: 16px; }
+.form-group label { display: block; font-size: 12px; font-weight: 600; color: var(--text2); margin-bottom: 6px; text-transform: uppercase; letter-spacing: .5px; }
+.form-group input, .form-group select, .form-group textarea { width: 100%; padding: 10px 14px; background: var(--input-bg); border: 1px solid var(--border); border-radius: 8px; color: var(--text); font-size: 14px; outline: none; transition: border-color .2s; }
+.form-group input[type="text"] { text-align: left; }
+.form-group input[type="text"].money-input { text-align: right; }
+.form-group input:focus, .form-group select:focus { border-color: var(--accent); }
+.form-group textarea { min-height: 60px; resize: vertical; }
+.form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+.form-row-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; }
+
+.calc-mode { display: flex; gap: 12px; margin-bottom: 12px; padding: 10px; background: var(--card2); border-radius: 8px; }
+.calc-mode label { display: flex; align-items: center; gap: 6px; font-size: 13px; cursor: pointer; }
+.calc-mode input[type="radio"] { accent-color: var(--accent); cursor: pointer; }
+
+.modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,.6); z-index: 1000; justify-content: center; align-items: center; backdrop-filter: blur(4px); }
+.modal-overlay.show { display: flex; }
+.modal { background: var(--card); border: 1px solid var(--border); border-radius: 16px; width: 90%; max-width: 700px; max-height: 90vh; overflow-y: auto; padding: 28px; }
+.modal h3 { font-size: 20px; margin-bottom: 20px; display: flex; align-items: center; gap: 10px; }
+.modal-footer { display: flex; justify-content: flex-end; gap: 10px; margin-top: 24px; padding-top: 16px; border-top: 1px solid var(--border); }
+
+.filters-bar { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 20px; padding: 16px 20px; background: var(--card); border: 1px solid var(--border); border-radius: 14px; align-items: flex-end; width: 100%; }
+.filters-bar .form-group { margin-bottom: 0; min-width: 140px; }
+.filters-bar .form-group input, .filters-bar .form-group select { padding: 8px 12px; font-size: 13px; }
+
+.multi-select-container { background: var(--input-bg); border: 1px solid var(--border); border-radius: 8px; padding: 8px; max-height: 150px; overflow-y: auto; min-width: 180px; }
+.multi-select-item { display: flex; align-items: center; gap: 8px; padding: 6px 8px; cursor: pointer; border-radius: 6px; transition: background .2s; }
+.multi-select-item:hover { background: rgba(108,92,231,.1); }
+.multi-select-item input[type="checkbox"] { width: 16px; height: 16px; accent-color: var(--accent); cursor: pointer; }
+.multi-select-item label { font-size: 13px; cursor: pointer; flex: 1; color: var(--text); }
+
+/* --- ESTILOS ESPECÍFICOS DO RESUMO PROFISSIONAL --- */
+	.upcoming-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; padding: 20px; width: 100%; }
+	.upcoming-col { 
+        background: rgba(255,255,255,0.02); 
+        border-radius: 16px; 
+        padding: 20px; 
+        border: 1px solid var(--border);
+    }
+	.upcoming-col.pay { border-left: 4px solid var(--red); }
+	.upcoming-col.receive { border-left: 4px solid var(--green); }
+	.col-title { 
+        font-size: 12px; 
+        text-transform: uppercase; 
+        font-weight: 800; 
+        margin-bottom: 16px; 
+        display: flex; 
+        align-items: center; 
+        gap: 8px; 
+        letter-spacing: 1px;
+    }
+	.col-title.pay { color: var(--red2); }
+	.col-title.receive { color: var(--green2); }
+
+	.due-item {
+	    background: rgba(255,255,255,0.03); 
+        border: 1px solid transparent; 
+        border-radius: 12px;
+	    padding: 14px; 
+        margin-bottom: 10px; 
+        cursor: pointer; 
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+	    display: flex; 
+        justify-content: space-between; 
+        align-items: center;
+	}
+	.due-item:hover { 
+        transform: scale(1.02); 
+        border-color: var(--border); 
+        background: rgba(255,255,255,0.05); 
+        box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+    }
+.due-info h4 { font-size: 13px; font-weight: 600; margin-bottom: 2px; color: var(--text); }
+.due-info p { font-size: 11px; color: var(--text2); }
+.due-value { text-align: right; }
+.due-value span.val { display: block; font-weight: 700; font-size: 14px; }
+.due-date { font-size: 10px; padding: 2px 6px; border-radius: 4px; margin-top: 4px; display: inline-block; }
+.val-pay { color: var(--red2); }
+.val-receive { color: var(--green2); }
+.date-urgent { background: rgba(225,112,85,0.2); color: var(--red2); }
+.date-normal { background: rgba(116,185,255,0.2); color: var(--blue); }
+
+	.bottom-grid { display: grid; grid-template-columns: 2fr 1fr; gap: 24px; width: 100%; }
+    .summary-flex { display: flex; gap: 24px; margin-bottom: 24px; align-items: stretch; width: 100%; }
+    .chart-container { 
+        background: var(--card); 
+        border: 1px solid var(--border); 
+        border-radius: 20px; 
+        padding: 24px; 
+        flex: 1; 
+        min-width: 45%;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+    }
+    .charts-row-flex { display: flex; gap: 24px; margin-bottom: 24px; width: 100%; }
+    .chart-container h3 { 
+        font-size: 16px; 
+        font-weight: 800; 
+        margin-bottom: 20px; 
+        color: var(--text); 
+        align-self: flex-start;
+        letter-spacing: -0.5px;
+    }
+    .chart-wrapper { width: 100%; height: 320px; display: flex; justify-content: center; align-items: center; }
+    #categoryChart, #personChart { width: 100% !important; height: 100% !important; }
+.trans-row { cursor: pointer; transition: background 0.2s; }
+.trans-row:hover { background: rgba(108,92,231,0.15); }
+.trans-row.active { background: rgba(108,92,231,0.25); border-left: 3px solid var(--accent); }
+
+.action-btn-sm { padding: 4px 8px; border: none; border-radius: 6px; cursor: pointer; font-size: 10px; font-weight: 600; margin-right: 4px; transition: all 0.2s; }
+.btn-pay-sm { background: var(--green); color: #fff; }
+.btn-pay-sm:hover { background: #00a381; }
+.btn-edit-sm { background: var(--accent); color: #fff; }
+.btn-edit-sm:hover { background: #5b4bd5; }
+
+.insight-card {
+    background: var(--card2); border-left: 4px solid var(--accent);
+    padding: 12px; border-radius: 0 8px 8px 0; margin-bottom: 12px;
+    display: flex; align-items: flex-start; gap: 10px; position: relative;
+}
+.insight-card.type-urgent { border-left-color: var(--red); background: rgba(225,112,85,0.1); }
+.insight-card.type-success { border-left-color: var(--green); background: rgba(0,184,148,0.1); }
+.insight-card.type-info { border-left-color: var(--blue); background: rgba(116,185,255,0.1); }
+.insight-icon { font-size: 16px; margin-top: 2px; }
+.insight-content { flex: 1; }
+.insight-title { font-size: 12px; font-weight: 700; margin-bottom: 4px; display: block; color: var(--text); }
+.insight-text { font-size: 11px; color: var(--text2); line-height: 1.4; }
+.dismiss-insight { background: none; border: none; color: var(--text2); cursor: pointer; font-size: 14px; opacity: 0.6; }
+.dismiss-insight:hover { opacity: 1; color: var(--red); }
+
+/* --- OUTROS ELEMENTOS --- */
+.parcelas-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 12px; margin-top: 12px; }
+.parcela-item { background: var(--card2); border: 1px solid var(--border); border-radius: 10px; padding: 14px; display: flex; flex-direction: column; gap: 8px; position: relative; }
+.parcela-item .p-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+.parcela-item .p-num { font-weight: 700; font-size: 14px; color: var(--accent2); }
+.parcela-item .p-val { font-weight: 600; font-size: 16px; }
+.parcela-item .p-date { font-size: 11px; color: var(--text2); }
+.parcela-item .edit-badge { position: absolute; top: 10px; right: 10px; background: var(--accent); color: #fff; font-size: 10px; padding: 3px 8px; border-radius: 10px; cursor: pointer; }
+.parcela-item .remove-badge { position: absolute; top: 10px; right: 10px; background: var(--red); color: #fff; font-size: 10px; padding: 3px 8px; border-radius: 10px; cursor: pointer; }
+.parcela-item .p-actions { display: flex; gap: 6px; margin-top: 8px; }
+.parcela-item .p-actions button { flex: 1; }
+.parcela-item .p-obs { margin-top: 6px; }
+.parcela-item .p-obs input { width: 100%; padding: 6px 8px; background: var(--input-bg); border: 1px solid var(--border); border-radius: 6px; color: var(--text); font-size: 12px; outline: none; }
+.parcela-item .p-obs input:focus { border-color: var(--accent); }
+.parcela-item .p-obs input::placeholder { color: var(--text2); }
+
+.print-section { display: none; }
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: var(--bg); }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: var(--accent); }
+.empty-state { text-align: center; padding: 60px 20px; color: var(--text2); }
+.empty-state .icon { font-size: 48px; margin-bottom: 12px; }
+.empty-state p { font-size: 14px; }
+.toast-container { position: fixed; top: 20px; right: 20px; z-index: 2000; display: flex; flex-direction: column; gap: 8px; }
+.toast { padding: 12px 20px; border-radius: 10px; font-size: 13px; font-weight: 600; animation: slideIn .3s, fadeOut .3s 2.7s; color: #fff; }
+.toast-success { background: var(--green); }
+.toast-error { background: var(--red); }
+.toast-info { background: var(--blue); }
+@keyframes slideIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+@keyframes fadeOut { from { opacity: 1; } to { opacity: 0; } }
+
+@media print {
+  body { background: #fff !important; color: #000 !important; }
+  body * { visibility: hidden; background: transparent !important; color: #000 !important; }
+  .print-section, .print-section * { visibility: visible; background: #fff !important; color: #000 !important; }
+  .print-section { display: block !important; position: absolute; left: 0; top: 0; width: 100%; background: #fff !important; color: #000 !important; padding: 40px; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+  
+  .print-header { text-align: center; margin-bottom: 25px; padding-bottom: 15px; border-bottom: 3px solid #6c5ce7; }
+  .print-header h1 { color: #6c5ce7 !important; font-size: 38px; margin-bottom: 5px; font-weight: 700; }
+  .print-header .print-date { color: #666 !important; font-size: 19px; }
+  
+  .print-filters { background: linear-gradient(135deg, #f8f9fa, #e9ecef) !important; padding: 12px 15px; border-radius: 8px; margin-bottom: 20px; border-left: 4px solid #6c5ce7; }
+  .print-filters .filter-row { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 8px; }
+  .print-filters .filter-item { font-size: 17px; color: #333 !important; }
+  .print-filters .filter-item strong { color: #6c5ce7 !important; }
+  .print-categories { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+  .print-category-tag { background: linear-gradient(135deg, #6c5ce7, #a29bfe) !important; color: #fff !important; padding: 4px 10px; border-radius: 15px; font-size: 17px; font-weight: 600; box-shadow: 0 2px 4px rgba(108,92,231,.2); }
+  
+  .print-table { width: 100%; border-collapse: collapse; margin-top: 15px; }
+  .print-table th { background: linear-gradient(135deg, #6c5ce7, #a29bfe) !important; color: #fff !important; border: 1px solid #6c5ce7 !important; padding: 10px 10px; font-size: 17px; font-weight: 600; text-transform: uppercase; }
+  .print-table td { border: 1px solid #ddd !important; padding: 9px 10px; font-size: 17px; background: #fff !important; color: #000 !important; }
+  .print-table tr:nth-child(even) { background: #f8f9fa !important; }
+  .print-table .col-valor { font-weight: 600; text-align: right; }
+  .print-table .col-valor.receita { color: #28a745 !important; }
+  .print-table .col-valor.despesa { color: #dc3545 !important; }
+  .print-table .col-valor.transfer { color: #fd79a8 !important; }
+  .print-table .col-status-pago { color: #28a745 !important; font-weight: 700; }
+  .print-table .col-status-pendente { color: #d4a017 !important; font-weight: 700; }
+  
+  .print-summary-box { margin-top: 25px; padding: 20px; background: #f8f9fa !important; border-radius: 8px; border-left: 5px solid #6c5ce7; page-break-inside: avoid; }
+  .print-summary-box h3 { color: #6c5ce7 !important; font-size: 18px; margin-bottom: 15px; border-bottom: 1px solid #ddd; padding-bottom: 10px; }
+  .summary-grid-top, .summary-grid-bottom { display: flex; gap: 15px; margin-bottom: 15px; }
+  .summary-grid-top { justify-content: space-between; }
+  .summary-grid-bottom { justify-content: center; max-width: 60%; margin: 0 auto; }
+  .summary-card { background: #fff !important; padding: 15px; border-radius: 6px; text-align: center; flex: 1; box-shadow: 0 2px 4px rgba(0,0,0,0.05); border-top: 3px solid transparent; }
+  .summary-card.green-border { border-top-color: #00b894 !important; }
+  .summary-card.red-border { border-top-color: #e17055 !important; }
+  .summary-card.blue-border { border-top-color: #6c5ce7 !important; }
+  .summary-card.yellow-border { border-top-color: #fdcb6e !important; }
+  .summary-label { font-size: 12px; color: #666 !important; text-transform: uppercase; font-weight: 600; margin-bottom: 5px; }
+  .summary-value { font-size: 22px; font-weight: 700; }
+  .green-text { color: #00b894 !important; }
+  .red-text { color: #e17055 !important; }
+  .yellow-text { color: #d4a017 !important; }
+  
+  .print-footer { margin-top: 30px; text-align: center; font-size: 11px; color: #888 !important; border-top: 1px solid #ddd; padding-top: 10px; }
+  .total-geral { font-weight: bold; color: #333 !important; margin-top: 5px; }
+}
+</style>
+</head>
+<body>
+
+<aside class="sidebar">
+<button class="sidebar-toggle" onclick="toggleSidebar()" title="Minimizar menu"><span class="toggle-icon">◀</span></button>
+<div class="logo"><span>💰Finança</span></div>
+<nav>
+<button class="active" onclick="switchTab('resumo')"><span class="icon">📊</span><span>Resumo</span></button>
+<button onclick="switchTab('transacoes')"><span class="icon">💳</span><span>Transações</span></button>
+<button onclick="switchTab('pessoas')"><span class="icon">👤</span><span>Pessoas</span></button>
+<button onclick="switchTab('categorias')"><span class="icon">🏷️</span><span>Categorias</span></button>
+<button onclick="switchTab('contas')"><span class="icon">🏦</span><span>Contas</span></button>
+<button onclick="switchTab('relatorios')"><span class="icon">📄</span><span>Relatórios</span></button>
+<button onclick="switchTab('configuracoes')"><span class="icon">⚙️</span><span>Configurações</span></button>
+</nav>
+</aside>
+
+<div class="main">
+<div class="topbar"><h2 id="pageTitle">📊 Resumo: Sistema de finanças - Criado por Vanderson Canedo 2026 _ V.3.0 Pro</h2><div class="date-display" id="currentDate"></div></div>
+<div class="content">
+
+<!-- ABA RESUMO PROFISSIONAL -->
+<div id="tab-resumo" class="tab-content active">
+    <div class="cards-row" id="summaryCards"></div>
+    
+    <div class="table-wrap" style="margin-bottom: 24px;">
+        <div class="table-toolbar">
+            <span class="title">📅 Próximos Vencimentos (7 dias)</span>
+        </div>
+        <div class="upcoming-grid">
+            <div class="upcoming-col pay">
+                <div class="col-title pay"><span>🔻 Contas a Pagar</span></div>
+                <div id="upcomingPayList"></div>
+            </div>
+            <div class="upcoming-col receive">
+                <div class="col-title receive"><span>🔺 Contas a Receber</span></div>
+                <div id="upcomingReceiveList"></div>
+            </div>
+        </div>
+    </div>
+
+    <div class="charts-row-flex">
+        <div class="chart-container">
+            <h3>🏷️ Gastos por Categoria</h3>
+            <div class="chart-wrapper"><canvas id="categoryChart"></canvas></div>
+        </div>
+        <div class="chart-container">
+            <h3>👤 Gastos por Pessoa</h3>
+            <div class="chart-wrapper"><canvas id="personChart"></canvas></div>
+        </div>
+    </div>
+    <div class="table-wrap" style="margin-bottom:0;">
+        <div class="table-toolbar"><span class="title">💳 Últimas Transações</span></div>
+        <table><thead><tr><th>Data</th><th>Descrição</th><th>Pessoa</th><th>Categoria</th><th>Conta</th><th>Valor</th><th>Status</th><th>Ações</th></tr></thead><tbody id="recentTransactionsTable"></tbody></table>
+    </div>
+</div>
+
+<!-- ABA TRANSAÇÕES -->
+<div id="tab-transacoes" class="tab-content">
+<div class="filter-cards" id="filterCards"></div>
+<div class="filters-bar">
+<div class="form-group"><label>Nome / Descrição</label><input type="text" id="filterName" placeholder="Buscar..." oninput="renderTransactions()"></div>
+<div class="form-group"><label>Pessoa</label><select id="filterPerson" onchange="renderTransactions()"><option value="">Todas</option></select></div>
+<div class="form-group"><label>Categoria</label><select id="filterCategory" onchange="renderTransactions()"><option value="">Todas</option></select></div>
+<div class="form-group"><label>Conta</label><select id="filterAccount" onchange="renderTransactions()"><option value="">Todas</option></select></div>
+<div class="form-group"><label>Tipo</label><select id="filterType" onchange="renderTransactions()"><option value="">Todos</option><option value="receita">Receita</option><option value="despesa">Despesa</option><option value="transferencia">Transferência</option></select></div>
+<div class="form-group"><label>Status</label><select id="filterStatus" onchange="renderTransactions()"><option value="">Todos</option><option value="pago">Pago</option><option value="pendente">Pendente</option></select></div>
+<div class="form-group"><label>Data Início</label><input type="date" id="filterDateStart" onchange="renderTransactions()"></div>
+<div class="form-group"><label>Data Fim</label><input type="date" id="filterDateEnd" onchange="renderTransactions()"></div>
+<div class="form-group"><label>&nbsp;</label><button class="btn btn-outline" onclick="clearFilters()">🔄 Limpar</button></div>
+</div>
+<div class="table-toolbar" style="background:var(--card);border:1px solid var(--border);border-radius:14px 14px 0 0;">
+<span class="title">💳 Transações</span>
+<button class="btn btn-success" onclick="openTransactionModal('receita')">➕ Receita</button>
+<button class="btn btn-danger" onclick="openTransactionModal('despesa')">➕ Despesa</button>
+<button class="btn btn-transfer" onclick="openTransferModal()">🔄 Transferência</button>
+</div>
+<div class="table-wrap" style="border-radius:0 0 14px 14px;">
+<table><thead><tr><th>Data Cadastro</th><th onclick="toggleTransactionSort()" style="cursor:pointer; color:var(--accent2);">Data Venc. <span id="sortIcon">▲</span></th><th>Descrição</th><th>Pessoa</th><th>Categoria</th><th>Conta</th><th>Valor</th><th>Parcela</th><th>Tipo</th><th>Status</th><th>Ações</th></tr></thead><tbody id="transactionsTable"></tbody></table>
+</div>
+</div>
+
+<!-- ABA PESSOAS -->
+<div id="tab-pessoas" class="tab-content">
+<div class="table-toolbar" style="background:var(--card);border:1px solid var(--border);border-radius:14px 14px 0 0;"><span class="title">👤 Pessoas</span><button class="btn btn-primary" onclick="openPersonModal()">➕ Nova Pessoa</button></div>
+<div class="table-wrap" style="border-radius:0 0 14px 14px;"><table><thead><tr><th>Nome</th><th>Cor</th><th>Ações</th></tr></thead><tbody id="personsTable"></tbody></table></div>
+</div>
+
+<!-- ABA CATEGORIAS -->
+<div id="tab-categorias" class="tab-content">
+<div class="table-toolbar" style="background:var(--card);border:1px solid var(--border);border-radius:14px 14px 0 0;"><span class="title">🏷️ Categorias</span><button class="btn btn-primary" onclick="openCategoryModal()">➕ Nova Categoria</button></div>
+<div class="table-wrap" style="border-radius:0 0 14px 14px;"><table><thead><tr><th>Nome</th><th>Cor</th><th>Ações</th></tr></thead><tbody id="categoriesTable"></tbody></table></div>
+</div>
+
+<!-- ABA CONTAS -->
+<div id="tab-contas" class="tab-content">
+<div class="table-toolbar" style="background:var(--card);border:1px solid var(--border);border-radius:14px 14px 0 0;"><span class="title">🏦 Contas</span><button class="btn btn-primary" onclick="openAccountModal()">➕ Nova Conta</button></div>
+<div class="table-wrap" style="border-radius:0 0 14px 14px;"><table><thead><tr><th>Nome</th><th>Saldo Inicial</th><th>Descrição</th><th>Ações</th></tr></thead><tbody id="accountsTable"></tbody></table></div>
+</div>
+
+<!-- ABA RELATÓRIOS -->
+<div id="tab-relatorios" class="tab-content">
+<div class="filters-bar">
+<div class="form-group"><label>Data Início</label><input type="date" id="reportDateStart"></div>
+<div class="form-group"><label>Data Fim</label><input type="date" id="reportDateEnd"></div>
+<div class="form-group"><label>Pessoas (múltipla)</label><div class="multi-select-container" id="reportPersonMulti"></div></div>
+<div class="form-group"><label>Status</label><select id="reportStatus" onchange="generateReport()"><option value="">Todos</option><option value="pago">Pago</option><option value="pendente">Pendente</option></select></div>
+<div class="form-group"><label>Categorias (múltipla)</label><div class="multi-select-container" id="reportCategoryMulti"></div></div>
+<div class="form-group"><label>Tipo</label><select id="reportType" onchange="generateReport()"><option value="">Todos</option><option value="receita">Receitas</option><option value="despesa">Despesas</option><option value="transferencia">Transferências</option></select></div>
+<div class="form-group"><label>&nbsp;</label><button class="btn btn-primary" onclick="generateReport()">📊 Gerar Relatório</button></div>
+<div class="form-group"><label>&nbsp;</label><button class="btn btn-success" onclick="printReport()">🖨️ Imprimir</button></div>
+</div>
+<div id="reportResults"></div>
+</div>
+
+<!-- ABA CONFIGURAÇÕES -->
+<div id="tab-configuracoes" class="tab-content">
+    <div class="table-toolbar" style="background:var(--card);border:1px solid var(--border);border-radius:14px 14px 0 0; margin-bottom: 20px;">
+        <span class="title">⚙️ Configurações e Backup</span>
+    </div>
+    
+    <div class="cards-row">
+        <div class="stat-card backup">
+            <div class="label">📤 Exportar Backup</div>
+            <p style="color:var(--text2);margin:12px 0;">Baixe um arquivo JSON completo com todas as suas transações, categorias, contas e pessoas. Mantenha-o em local seguro.</p>
+            <button class="btn btn-success" onclick="exportBackup()">⬇️ Baixar Backup</button>
+        </div>
+        <div class="stat-card" style="border-left: 4px solid var(--yellow);">
+            <div class="label">📥 Importar Backup</div>
+            <p style="color:var(--text2);margin:12px 0;">Selecione um arquivo de backup para restaurar seus dados. <strong>Atenção:</strong> isso substituirá todos os dados atuais.</p>
+            <input type="file" id="importFile" accept=".json" style="display:none;" onchange="importBackup(this)">
+            <button class="btn btn-primary" onclick="document.getElementById('importFile').click()">⬆️ Carregar Arquivo</button>
+        </div>
+        <div class="stat-card" style="border-left: 4px solid var(--red);">
+            <div class="label">🗑️ Limpar Dados</div>
+            <p style="color:var(--text2);margin:12px 0;">Remove permanentemente todos os registros do sistema. Recomendado fazer backup antes.</p>
+            <button class="btn btn-danger" onclick="clearAllData()">🚨 Limpar Tudo</button>
+        </div>
+    </div>
+    
+    <div style="margin-top:20px; padding:20px; background:var(--card); border:1px solid var(--border); border-radius:12px;">
+        <h4 style="margin-bottom:12px; color:var(--accent2);">ℹ️ Informações Importantes</h4>
+        <ul style="color:var(--text2); font-size:13px; padding-left:20px; line-height:1.8;">
+            <li>O arquivo gerado é no formato <code>.json</code> e pode ser lido em qualquer editor de texto.</li>
+            <li>Ao restaurar, o sistema substitui integralmente os dados atuais.</li>
+            <li>É possível editar o JSON manualmente antes de importar, mas cuidado com a estrutura.</li>
+            <li>Recomenda-se fazer backup semanalmente ou após grandes alterações.</li>
+            <li>Esse sistema foi criado por <strong>VANDERSON CANEDO CORREA</strong> no ano de 2026.</li>
+            <li>Versão Atual: <strong>V.3.0 Pro</strong></li>
+        </ul>
+    </div>
+</div>
+
+</div>
+</div>
+
+<!-- MODAIS -->
+<div class="modal-overlay" id="modalTransaction">
+<div class="modal">
+<h3 id="modalTransactionTitle">➕ Nova Transação</h3>
+<input type="hidden" id="transId"><input type="hidden" id="transType">
+<div class="form-row">
+<div class="form-group"><label>Descrição</label><input type="text" id="transDesc" placeholder="Ex: Salário, Aluguel..."></div>
+<div class="form-group"><label>Valor Total</label><input type="text" id="transValue" placeholder="0,00" oninput="formatCurrencyInput(this); handleValueInput('total')"></div>
+</div>
+<div class="form-row-3">
+<div class="form-group"><label>Pessoa (opcional)</label><select id="transPerson"></select></div>
+<div class="form-group"><label>Categoria</label><select id="transCategory"></select></div>
+<div class="form-group"><label>Conta</label><select id="transAccount"></select></div>
+</div>
+<div class="form-row-3">
+<div class="form-group"><label>Data de Cadastro</label><input type="date" id="transCreatedAt"></div>
+<div class="form-group"><label>Data de Vencimento</label><input type="date" id="transDate"></div>
+<div class="form-group"><label>Parcelamento</label><input type="number" id="transParcelas" min="1" max="999" value="1" style="width:100%;padding:8px 10px;background:var(--input-bg);border:1px solid var(--border);border-radius:6px;color:var(--text);" oninput="toggleParcelas()"></div>
+<div class="form-group"><label>Status</label><select id="transStatus"><option value="pendente">Pendente</option><option value="pago">Pago</option></select></div>
+</div>
+<div class="calc-mode">
+<label><input type="radio" name="calcMode" value="total" checked onchange="switchCalcMode()"> Calcular por Total</label>
+<label><input type="radio" name="calcMode" value="parcela" onchange="switchCalcMode()"> Calcular por Parcela</label>
+</div>
+<div class="form-group" id="installmentValueGroup" style="display:none;"><label>Valor da Parcela</label><input type="text" id="transInstallmentValue" placeholder="0,00" oninput="formatCurrencyInput(this); handleValueInput('parcela')"></div>
+<div class="form-group"><label>Observações (opcional)</label><textarea id="transObservation" placeholder="Anote algo sobre esta transação..."></textarea></div>
+<div id="parcelasPreview" style="display:none;">
+<label style="font-size:12px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:8px;">Prévia das Parcelas — Clique no ✏️ para editar valor e data</label>
+<div class="parcelas-grid" id="parcelasGrid"></div>
+</div>
+<div class="modal-footer"><button class="btn btn-outline" onclick="closeModal('modalTransaction')">Cancelar</button><button class="btn btn-primary" onclick="saveTransaction()">💾 Salvar</button></div>
+</div>
+</div>
+
+<div class="modal-overlay" id="modalTransfer">
+<div class="modal">
+<h3>🔄 Nova Transferência</h3>
+<input type="hidden" id="transferId">
+<div class="form-group"><label>Descrição</label><input type="text" id="transferDesc" placeholder="Ex: Transferência para reserva..."></div>
+<div class="form-row">
+<div class="form-group"><label>Conta de Origem</label><select id="transferFromAccount"></select></div>
+<div class="form-group"><label>Conta de Destino</label><select id="transferToAccount"></select></div>
+</div>
+<div class="form-row-3">
+<div class="form-group"><label>Valor</label><input type="text" id="transferValue" placeholder="0,00" oninput="formatCurrencyInput(this)"></div>
+<div class="form-group"><label>Data</label><input type="date" id="transferDate"></div>
+<div class="form-group"><label>Pessoa (opcional)</label><select id="transferPerson"><option value="">Sem pessoa</option></select></div>
+</div>
+<div class="form-row">
+<div class="form-group"><label>Categoria (opcional)</label><select id="transferCategory"><option value="">Sem categoria</option></select></div>
+<div class="form-group"><label>Status</label><select id="transferStatus"><option value="pago">Pago</option><option value="pendente">Pendente</option></select></div>
+</div>
+<div class="form-group"><label>Observações (opcional)</label><textarea id="transferObservation" placeholder="Anote algo sobre esta transferência..."></textarea></div>
+<div class="modal-footer"><button class="btn btn-outline" onclick="closeModal('modalTransfer')">Cancelar</button><button class="btn btn-transfer" onclick="saveTransfer()">💾 Salvar Transferência</button></div>
+</div>
+</div>
+
+<div class="modal-overlay" id="modalParcelaPreview">
+<div class="modal" style="max-width:450px;">
+<h3>✏️ Editar Parcela</h3>
+<input type="hidden" id="ppIndex"><input type="hidden" id="ppTotal">
+<div class="form-group"><label>Nº da Parcela</label><input type="text" id="ppNum" readonly style="opacity:.6;"></div>
+<div class="form-group"><label>Valor da Parcela</label><input type="text" id="ppValue" oninput="formatCurrencyInput(this)"></div>
+<div class="form-group"><label>Data de Vencimento</label><input type="date" id="ppDate"></div>
+<div class="modal-footer"><button class="btn btn-outline" onclick="closeModal('modalParcelaPreview')">Cancelar</button><button class="btn btn-primary" onclick="saveParcelaPreview()">💾 Aplicar</button></div>
+</div>
+</div>
+
+<div class="modal-overlay" id="modalParcela">
+<div class="modal">
+<h3>✏️ Editar Parcela</h3>
+<input type="hidden" id="parcelaTransId"><input type="hidden" id="parcelaNum">
+<input type="hidden" id="parcelaOriginalStatus">
+<div class="form-group"><label>Descrição</label><input type="text" id="parcelaDesc" placeholder="Ex: Entrada, Juros..."></div>
+<div class="form-row-3">
+<div class="form-group"><label>Nº da Parcela</label><input type="number" id="parcelaNumber" min="1" value="1"></div>
+<div class="form-group"><label>Valor da Parcela</label><input type="text" id="parcelaValue" oninput="formatCurrencyInput(this)"></div>
+<div class="form-group"><label>Data de Vencimento</label><input type="date" id="parcelaDate"></div>
+</div>
+<div class="form-row">
+<div class="form-group"><label>Categoria</label><select id="parcelaCategory"></select></div>
+<div class="form-group"><label>Conta</label><select id="parcelaAccount"></select></div>
+</div>
+<div class="form-row">
+<div class="form-group"><label>Status</label><select id="parcelaStatus"><option value="pendente">Pendente</option><option value="pago">Pago</option></select></div>
+<div class="form-group"><label>Observação da Parcela</label><input type="text" id="parcelaObservation" placeholder="Obs. específica..."></div>
+</div>
+<div class="modal-footer"><button class="btn btn-outline" onclick="closeModal('modalParcela')">Cancelar</button><button class="btn btn-primary" onclick="saveParcela()">💾 Salvar</button></div>
+</div>
+</div>
+
+<div class="modal-overlay" id="modalParcelamento">
+<div class="modal">
+<h3>📋 Editar Parcelamento Completo</h3>
+<input type="hidden" id="parcelamentoTransId">
+<div class="form-group"><label>Valor Total</label><input type="text" id="parcelamentoValue" placeholder="0,00" oninput="formatCurrencyInput(this); updateParcelamentoPreview()"></div>
+<div class="form-group"><label>Nº de Parcelas</label><input type="number" id="parcelamentoNum" min="1" value="1" onchange="updateParcelamentoPreview()"></div>
+<div class="form-group"><label>Data da 1ª Parcela</label><input type="date" id="parcelamentoDate" onchange="updateParcelamentoPreview()"></div>
+<div id="parcelamentoPreview"></div>
+<div class="modal-footer"><button class="btn btn-outline" onclick="closeModal('modalParcelamento')">Cancelar</button><button class="btn btn-primary" onclick="saveParcelamento()">💾 Salvar Todas</button></div>
+</div>
+</div>
+
+<div class="modal-overlay" id="modalCategory">
+<div class="modal">
+<h3 id="modalCategoryTitle">➕ Nova Categoria</h3>
+<input type="hidden" id="catId">
+<div class="form-group"><label>Nome</label><input type="text" id="catName" placeholder="Ex: Alimentação, Salário..."></div>
+<div class="form-group"><label>Cor</label><input type="color" id="catColor" value="#6c5ce7" style="width:100%;height:40px;padding:4px;border-radius:8px;"></div>
+<div class="modal-footer"><button class="btn btn-outline" onclick="closeModal('modalCategory')">Cancelar</button><button class="btn btn-primary" onclick="saveCategory()">💾 Salvar</button></div>
+</div>
+</div>
+
+<!-- NOVO MODAL PESSOA -->
+<div class="modal-overlay" id="modalPerson">
+<div class="modal">
+<h3 id="modalPersonTitle">➕ Nova Pessoa</h3>
+<input type="hidden" id="perId">
+<div class="form-group"><label>Nome</label><input type="text" id="perName" placeholder="Ex: Fornecedor XYZ, Cliente João..."></div>
+<div class="form-group"><label>Cor</label><input type="color" id="perColor" value="#e17055" style="width:100%;height:40px;padding:4px;border-radius:8px;"></div>
+<div class="modal-footer"><button class="btn btn-outline" onclick="closeModal('modalPerson')">Cancelar</button><button class="btn btn-primary" onclick="savePerson()">💾 Salvar</button></div>
+</div>
+</div>
+
+<div class="modal-overlay" id="modalAccount">
+<div class="modal">
+<h3 id="modalAccountTitle">➕ Nova Conta</h3>
+<input type="hidden" id="accId">
+<div class="form-group"><label>Nome</label><input type="text" id="accName" placeholder="Ex: Banco Inter, Nubank..."></div>
+<div class="form-group"><label>Saldo Inicial</label><input type="number" id="accBalance" placeholder="0.00" step="0.01"></div>
+<div class="form-group"><label>Descrição (opcional)</label><input type="text" id="accDesc" placeholder="Descrição da conta..."></div>
+<div class="modal-footer"><button class="btn btn-outline" onclick="closeModal('modalAccount')">Cancelar</button><button class="btn btn-primary" onclick="saveAccount()">💾 Salvar</button></div>
+</div>
+</div>
+
+<div class="print-section" id="printSection"></div>
+<div class="toast-container" id="toastContainer"></div>
+<div class="sidebar-overlay" onclick="closeSidebarMobile()"></div>
+
+<script>
+const API_BASE = '';
+let apiToken = sessionStorage.getItem('finance_api_token') || '';
+let syncTimer = null;
+const DB = {
+get(key) { try { return JSON.parse(localStorage.getItem('fin_' + key)) || []; } catch { return []; } },
+set(key, val) { localStorage.setItem('fin_' + key, JSON.stringify(val)); scheduleSync(); },
+getObj(key) { try { return JSON.parse(localStorage.getItem('fin_' + key)) || {}; } catch { return {}; } },
+setObj(key, val) { localStorage.setItem('fin_' + key, JSON.stringify(val)); scheduleSync(); }
+};
+function getLocalState() {
+    const data = {};
+    for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i);
+        if (key && key.startsWith('fin_')) {
+            try { data[key] = JSON.parse(localStorage.getItem(key)); } catch { data[key] = localStorage.getItem(key); }
+        }
+    }
+    return data;
+}
+function applyRemoteState(data) { Object.keys(data || {}).forEach(key => localStorage.setItem(key, JSON.stringify(data[key]))); }
+function scheduleSync() { if (!apiToken) return; clearTimeout(syncTimer); syncTimer = setTimeout(syncToServer, 350); }
+async function loginToServer() {
+    if (apiToken) return true;
+    const password = prompt('Senha do sistema financeiro:');
+    if (!password) return false;
+    const response = await fetch(API_BASE + '/api/login', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ password }) });
+    if (!response.ok) { showToast('Senha inválida', 'error'); return false; }
+    const result = await response.json(); apiToken = result.token; sessionStorage.setItem('finance_api_token', apiToken); return true;
+}
+async function syncFromServer() {
+    try {
+        if (!(await loginToServer())) return;
+        const response = await fetch(API_BASE + '/api/state', { headers: { Authorization: 'Bearer ' + apiToken } });
+        if (response.status === 401) { sessionStorage.removeItem('finance_api_token'); apiToken = ''; return; }
+        if (!response.ok) throw new Error('Falha ao carregar dados');
+        const result = await response.json();
+        if (result.state && Object.keys(result.state).length) { applyRemoteState(result.state); refreshAll(); }
+        else await syncToServer();
+    } catch (error) { showToast('Servidor indisponível; dados locais mantidos', 'error'); console.error(error); }
+}
+async function syncToServer() {
+    if (!apiToken) return;
+    try { await fetch(API_BASE + '/api/state', { method: 'PUT', headers: {'Content-Type': 'application/json', Authorization: 'Bearer ' + apiToken}, body: JSON.stringify({ state: getLocalState() }) }); }
+    catch (error) { console.error('Sincronização pendente', error); }
+}
+function genId() { return Date.now().toString(36) + Math.random().toString(36).substr(2, 5); }
+function formatMoney(v) { return 'R$ ' + Number(v).toFixed(2).replace('.', ',').replace(/\B(?=(\d{3})+(?!\d))/g, '.'); }
+function formatDate(d) { if (!d) return '-'; const p = d.split('-'); return p[2] + '/' + p[1] + '/' + p[0]; }
+function today() {
+const d = new Date();
+const year = d.getFullYear();
+const month = String(d.getMonth() + 1).padStart(2, '0');
+const day = String(d.getDate()).padStart(2, '0');
+return `${year}-${month}-${day}`;
+}
+function currentMonthStart() { const d = new Date(); return new Date(d.getFullYear(), d.getMonth(), 1).toISOString().split('T')[0]; }
+function currentMonthEnd() { const d = new Date(); return new Date(d.getFullYear(), d.getMonth() + 1, 0).toISOString().split('T')[0]; }
+
+function formatCurrencyInput(input) {
+let value = input.value.replace(/\D/g, '');
+if (value === '') return input.value = '';
+value = (Number(value) / 100).toFixed(2) + '';
+let parts = value.split('.');
+let integerPart = parts[0];
+let decimalPart = parts[1];
+integerPart = integerPart.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+input.value = integerPart + ',' + decimalPart;
+}
+function parseMoney(str) {
+if (!str) return 0;
+return parseFloat(str.replace(/\./g, '').replace(',', '.')) || 0;
+}
+
+function showToast(msg, type = 'success') {
+const c = document.getElementById('toastContainer');
+const t = document.createElement('div');
+t.className = 'toast toast-' + type;
+t.textContent = msg;
+c.appendChild(t);
+setTimeout(() => t.remove(), 3000);
+}
+
+let tempParcelasEdits = {};
+let activeTransactionId = null;
+let categoryChart = null;
+let personChart = null;
+let transactionSortOrder = 'asc'; // Padrão: crescente
+
+// ============================================================================
+// 🔄 FUNÇÃO ADICIONADA: Recalcular datas das parcelas quando a data base mudar
+// ============================================================================
+function recalculateParcelasDates() {
+    const num = parseInt(document.getElementById('transParcelas').value) || 1;
+    const baseDateStr = document.getElementById('transDate').value;
+    if (!baseDateStr || num <= 1) return;
+    
+    const baseDate = new Date(baseDateStr);
+    const mode = document.querySelector('input[name="calcMode"]:checked').value;
+    const totalValue = parseMoney(document.getElementById('transValue').value);
+    const installmentValue = mode === 'total' 
+        ? (num > 0 ? Math.round((totalValue / num) * 100) / 100 : 0)
+        : parseMoney(document.getElementById('transInstallmentValue').value);
+    
+    // Recalcula todas as datas e valores
+    for (let i = 0; i < num; i++) {
+        const pDate = new Date(baseDate);
+        pDate.setMonth(pDate.getMonth() + i);
+        if (pDate.getDate() !== baseDate.getDate()) {
+            pDate.setDate(0);
+        }
+        
+        const dateStr = pDate.toISOString().split('T')[0];
+        
+        if (!tempParcelasEdits[i]) {
+            tempParcelasEdits[i] = {
+                value: installmentValue,
+                date: dateStr,
+                obs: '',
+                status: i === 0 ? document.getElementById('transStatus').value : 'pendente'
+            };
+        } else {
+            // Atualiza a data
+            tempParcelasEdits[i].date = dateStr;
+            // 🔥 ATUALIZA O VALOR TAMBÉM (se não foi editado manualmente)
+            if (mode === 'parcela') {
+                tempParcelasEdits[i].value = installmentValue;
+            }
+        }
+    }
+    
+    toggleParcelas();
+}
+
+function init() {
+    const now = new Date();
+    document.getElementById('currentDate').textContent = now.toLocaleDateString('pt-BR', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+    document.getElementById('filterDateStart').value = currentMonthStart();
+    document.getElementById('filterDateEnd').value = currentMonthEnd();
+    document.getElementById('reportDateStart').value = currentMonthStart();
+    document.getElementById('reportDateEnd').value = currentMonthEnd();
+    
+    if (!document.querySelector('.sidebar-overlay')) {
+        const overlay = document.createElement('div');
+        overlay.className = 'sidebar-overlay';
+        overlay.onclick = closeSidebarMobile;
+        document.body.appendChild(overlay);
+    }
+    
+    if (DB.get('categories').length === 0) {
+        DB.set('categories', [
+            { id: genId(), name: 'Salário', color: '#00b894' },
+            { id: genId(), name: 'Freelance', color: '#55efc4' },
+            { id: genId(), name: 'Investimentos', color: '#74b9ff' },
+            { id: genId(), name: 'Alimentação', color: '#e17055' },
+            { id: genId(), name: 'Transporte', color: '#fdcb6e' },
+            { id: genId(), name: 'Moradia', color: '#a29bfe' },
+            { id: genId(), name: 'Saúde', color: '#ff7675' },
+            { id: genId(), name: 'Educação', color: '#6c5ce7' },
+            { id: genId(), name: 'Lazer', color: '#fd79a8' },
+            { id: genId(), name: 'Outros', color: '#b2bec3' }
+        ]);
+    }
+    if (DB.get('accounts').length === 0) {
+        DB.set('accounts', [
+            { id: genId(), name: 'Dinheiro', balance: 0, desc: 'Conta de dinheiro físico' },
+            { id: genId(), name: 'Conta Corrente', balance: 0, desc: 'Conta bancária principal' }
+        ]);
+    }
+    if (DB.get('persons').length === 0) {
+        DB.set('persons', [
+            { id: genId(), name: 'Fornecedor Principal', color: '#e17055' },
+            { id: genId(), name: 'Cliente Exemplo', color: '#00b894' }
+        ]);
+    }
+    
+    refreshAll();
+    renderReportPersonMulti();
+    renderReportCategoryMulti();
+
+    // =========================================================================
+    // 📅 LISTENER: ATUALIZAÇÃO AUTOMÁTICA QUANDO MUDA A DATA
+    // =========================================================================
+    // =========================================================================
+// 📅 ADICIONAR LISTENER QUANDO EDITAR (modal já existe)
+// =========================================================================
+const dateInput = document.getElementById('transDate');
+if (dateInput) {
+    const newDateInput = dateInput.cloneNode(true);
+    dateInput.parentNode.replaceChild(newDateInput, dateInput);
+    
+    newDateInput.addEventListener('change', function() {
+        const numParcelas = parseInt(document.getElementById('transParcelas').value) || 1;
+        if (numParcelas > 1) {
+            recalculateParcelasDates();
+        }
+    });
+}
+    
+    // =========================================================================
+    // 💰 LISTENER: ATUALIZAÇÃO AUTOMÁTICA QUANDO MUDA O VALOR DA PARCELA
+    // =========================================================================
+    const installmentValueInput = document.getElementById('transInstallmentValue');
+    if (installmentValueInput) {
+        installmentValueInput.addEventListener('input', function() {
+            const mode = document.querySelector('input[name="calcMode"]:checked').value;
+            const numParcelas = parseInt(document.getElementById('transParcelas').value) || 1;
+            
+            // Se estiver no modo parcela, atualiza todas as outras
+            if (mode === 'parcela' && numParcelas > 1) {
+                recalculateParcelasDates();
+            } else if (mode === 'total' && numParcelas > 1) {
+                 // Se mudar o total, atualiza o valor unitário da parcela
+                 const total = parseMoney(document.getElementById('transValue').value);
+                 const iv = numParcelas > 0 ? Math.round((total / numParcelas) * 100) / 100 : 0;
+                 document.getElementById('transInstallmentValue').value = formatMoney(iv).replace('R$ ', '');
+                 recalculateParcelasDates();
+            }
+        });
+    }
+    
+    // Listener para quando muda a quantidade de parcelas
+    const parcelasInput = document.getElementById('transParcelas');
+    if (parcelasInput) {
+        parcelasInput.addEventListener('change', function() {
+            recalculateParcelasDates();
+        });
+        // Atualiza também enquanto digita
+        parcelasInput.addEventListener('input', function() {
+             recalculateParcelasDates();
+        });
+    }
+}
+
+function refreshAll() {
+renderSummary(); renderTransactions(); renderFilterCards();
+renderPersons(); renderCategories(); renderAccounts(); populateSelects(); renderReportCategoryMulti();
+}
+
+function toggleSidebar() {
+const sidebar = document.querySelector('.sidebar');
+const overlay = document.querySelector('.sidebar-overlay');
+if (window.innerWidth <= 768) {
+sidebar.classList.toggle('open');
+if (overlay) overlay.classList.toggle('show', sidebar.classList.contains('open'));
+} else {
+sidebar.classList.toggle('minimized');
+const icon = sidebar.querySelector('.toggle-icon');
+if (icon) icon.textContent = sidebar.classList.contains('minimized') ? '▶' : '◀';
+}
+}
+function closeSidebarMobile() {
+if (window.innerWidth <= 768) {
+document.querySelector('.sidebar')?.classList.remove('open');
+document.querySelector('.sidebar-overlay')?.classList.remove('show');
+}
+}
+window.addEventListener('resize', () => {
+if (window.innerWidth > 768) {
+document.querySelector('.sidebar')?.classList.remove('open');
+document.querySelector('.sidebar-overlay')?.classList.remove('show');
+const sidebar = document.querySelector('.sidebar');
+const icon = sidebar?.querySelector('.toggle-icon');
+if (sidebar && !sidebar.classList.contains('minimized') && icon) icon.textContent = '◀';
+}
+});
+
+function switchTab(tab) {
+document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+document.querySelectorAll('.sidebar nav button').forEach(b => b.classList.remove('active'));
+document.getElementById('tab-' + tab).classList.add('active');
+event.currentTarget.classList.add('active');
+const titles = { resumo: '📊 Resumo', transacoes: '💳 Transações', pessoas: '👤 Pessoas', categorias: '🏷️ Categorias', contas: '🏦 Contas', relatorios: '📄 Relatórios', configuracoes: '⚙️ Configurações' };
+document.getElementById('pageTitle').textContent = titles[tab];
+if (window.innerWidth <= 768) closeSidebarMobile();
+if (tab === 'relatorios') { renderReportCategoryMulti(); generateReport(); }
+if (tab === 'transacoes' && !activeTransactionId) {
+    document.querySelectorAll('.trans-row').forEach(r => r.classList.remove('active'));
+}
+}
+
+function populateSelects() {
+const cats = DB.get('categories'); const accs = DB.get('accounts'); const pers = DB.get('persons');
+['filterPerson', 'reportPerson', 'transPerson', 'transferPerson'].forEach(id => {
+const sel = document.getElementById(id); if (!sel) return;
+const val = sel.value;
+sel.innerHTML = (id.includes('filter') || id.includes('report')) ? '<option value="">Todas</option>' : '<option value="">Selecione...</option>';
+pers.forEach(p => sel.innerHTML += `<option value="${p.id}">${p.name}</option>`);
+sel.value = val;
+});
+['filterCategory', 'reportCategory', 'parcelaCategory', 'transCategory', 'transferCategory'].forEach(id => {
+const sel = document.getElementById(id); if (!sel) return;
+const val = sel.value;
+sel.innerHTML = id === 'transferCategory' ? '<option value="">Sem categoria</option>' : '<option value="">Selecione...</option>';
+cats.forEach(c => sel.innerHTML += `<option value="${c.id}">${c.name}</option>`);
+sel.value = val;
+});
+['filterAccount'].forEach(id => {
+const sel = document.getElementById(id); if (!sel) return;
+const val = sel.value;
+sel.innerHTML = '<option value="">Todas</option>';
+accs.forEach(a => sel.innerHTML += `<option value="${a.id}">${a.name}</option>`);
+sel.value = val;
+});
+['transAccount', 'parcelaAccount', 'transferFromAccount', 'transferToAccount'].forEach(id => {
+const sel = document.getElementById(id); if (!sel) return;
+const val = sel.value;
+sel.innerHTML = '<option value="">Selecione...</option>';
+accs.forEach(a => sel.innerHTML += `<option value="${a.id}">${a.name}</option>`);
+sel.value = val;
+});
+}
+
+function renderReportCategoryMulti() {
+const container = document.getElementById('reportCategoryMulti');
+const cats = DB.get('categories');
+const selected = JSON.parse(localStorage.getItem('fin_reportSelectedCats') || '[]');
+let html = `
+<div style="display:flex; gap:5px; margin-bottom:8px; padding-bottom:8px; border-bottom:1px solid var(--border);">
+    <button class="btn btn-outline btn-sm" style="flex:1; padding:4px;" onclick="selectAllReportCategories(true)">Marcar Todos</button>
+    <button class="btn btn-outline btn-sm" style="flex:1; padding:4px;" onclick="selectAllReportCategories(false)">Desmarcar Todos</button>
+</div>`;
+html += cats.map(c => `
+<div class="multi-select-item" onclick="toggleReportCategory('${c.id}', this)">
+<input type="checkbox" id="rcat-${c.id}" ${selected.includes(c.id) ? 'checked' : ''}>
+<label for="rcat-${c.id}" style="display:flex;align-items:center;gap:6px;">
+<span style="width:12px;height:12px;border-radius:3px;background:${c.color};display:inline-block;"></span>${c.name}
+</label>
+</div>`).join('');
+container.innerHTML = html;
+}
+function toggleReportCategory(catId, el) {
+const checkbox = el.querySelector('input[type="checkbox"]');
+checkbox.checked = !checkbox.checked;
+let selected = JSON.parse(localStorage.getItem('fin_reportSelectedCats') || '[]');
+if (checkbox.checked) { if (!selected.includes(catId)) selected.push(catId); }
+else { selected = selected.filter(id => id !== catId); }
+localStorage.setItem('fin_reportSelectedCats', JSON.stringify(selected));
+generateReport();
+}
+function renderReportPersonMulti() {
+const container = document.getElementById('reportPersonMulti');
+const pers = DB.get('persons');
+const selected = JSON.parse(localStorage.getItem('fin_reportSelectedPersons') || '[]');
+let html = `
+<div style="display:flex; gap:5px; margin-bottom:8px; padding-bottom:8px; border-bottom:1px solid var(--border);">
+    <button class="btn btn-outline btn-sm" style="flex:1; padding:4px;" onclick="selectAllReportPersons(true)">Marcar Todos</button>
+    <button class="btn btn-outline btn-sm" style="flex:1; padding:4px;" onclick="selectAllReportPersons(false)">Desmarcar Todos</button>
+</div>`;
+html += pers.map(p => `
+<div class="multi-select-item" onclick="toggleReportPerson('${p.id}', this)">
+<input type="checkbox" id="rper-${p.id}" ${selected.includes(p.id) ? 'checked' : ''}>
+<label for="rper-${p.id}" style="display:flex;align-items:center;gap:6px;">
+<span style="width:12px;height:12px;border-radius:50%;background:${p.color};display:inline-block;"></span>${p.name}
+</label>
+</div>`).join('');
+container.innerHTML = html;
+}
+function toggleReportPerson(personId, el) {
+const checkbox = el.querySelector('input[type="checkbox"]');
+checkbox.checked = !checkbox.checked;
+let selected = JSON.parse(localStorage.getItem('fin_reportSelectedPersons') || '[]');
+if (checkbox.checked) { if (!selected.includes(personId)) selected.push(personId); }
+else { selected = selected.filter(id => id !== personId); }
+localStorage.setItem('fin_reportSelectedPersons', JSON.stringify(selected));
+generateReport();
+}
+function getSelectedReportPersons() { return JSON.parse(localStorage.getItem('fin_reportSelectedPersons') || '[]'); }
+function getSelectedReportCategories() { return JSON.parse(localStorage.getItem('fin_reportSelectedCats') || '[]'); }
+function selectAllReportPersons(select) {
+const pers = DB.get('persons');
+const ids = select ? pers.map(p => p.id) : [];
+localStorage.setItem('fin_reportSelectedPersons', JSON.stringify(ids));
+renderReportPersonMulti();
+generateReport();
+}
+function selectAllReportCategories(select) {
+const cats = DB.get('categories');
+const ids = select ? cats.map(c => c.id) : [];
+localStorage.setItem('fin_reportSelectedCats', JSON.stringify(ids));
+renderReportCategoryMulti();
+generateReport();
+}
+
+function renderFilterCards() {
+const transactions = getFilteredTransactions();
+let totalReceita = 0, totalDespesa = 0, totalPago = 0, totalPendente = 0, totalTransfer = 0;
+transactions.forEach(t => {
+if (t.type === 'receita') totalReceita += t.value; 
+else if (t.type === 'despesa') totalDespesa += t.value;
+else if (t.type === 'transferencia') totalTransfer += t.value;
+if (t.status === 'pago') totalPago += t.value; else totalPendente += t.value;
+});
+const resultadoLiquido = totalReceita - totalDespesa;
+const resultadoClass = resultadoLiquido >= 0 ? 'fc-resultado' : 'fc-resultado-negativo';
+const resultadoIcon = resultadoLiquido >= 0 ? '💰' : '⚠️';
+document.getElementById('filterCards').innerHTML = `
+<div class="filter-card fc-receita" onclick="setFilter('type','receita')"><div class="fc-icon">↑</div><div class="fc-label">Receitas</div><div class="fc-value">${formatMoney(totalReceita)}</div></div>
+<div class="filter-card fc-despesa" onclick="setFilter('type','despesa')"><div class="fc-icon">↓</div><div class="fc-label">Despesas</div><div class="fc-value">${formatMoney(totalDespesa)}</div></div>
+<div class="filter-card ${resultadoClass}"><div class="fc-icon">${resultadoIcon}</div><div class="fc-label">Resultado Líquido</div><div class="fc-value">${formatMoney(resultadoLiquido)}</div></div>
+<div class="filter-card fc-transfer" onclick="setFilter('type','transferencia')"><div class="fc-icon">🔄</div><div class="fc-label">Transferências</div><div class="fc-value">${formatMoney(totalTransfer)}</div></div>
+<div class="filter-card fc-pago" onclick="setFilter('status','pago')"><div class="fc-icon">✓</div><div class="fc-label">Pagos</div><div class="fc-value">${formatMoney(totalPago)}</div></div>
+<div class="filter-card fc-pendente" onclick="setFilter('status','pendente')"><div class="fc-icon">⏳</div><div class="fc-label">Pendentes</div><div class="fc-value">${formatMoney(totalPendente)}</div></div>`;
+}
+function setFilter(field, value) {
+const el = field === 'type' ? document.getElementById('filterType') : document.getElementById('filterStatus');
+el.value = value; renderTransactions();
+document.querySelectorAll('.filter-card').forEach(c => c.classList.remove('active'));
+event.currentTarget.classList.add('active');
+}
+
+function renderSummary() {
+    const transactions = DB.get('transactions');
+    const now = new Date();
+    const monthStart = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split('T')[0];
+    const monthEnd = new Date(now.getFullYear(), now.getMonth() + 1, 0).toISOString().split('T')[0];
+    let totalReceita = 0, totalDespesa = 0, totalPendente = 0;
+    
+    transactions.forEach(t => {
+        if (t.date >= monthStart && t.date <= monthEnd && t.type !== 'transferencia') {
+            if (t.type === 'receita') totalReceita += t.value; else totalDespesa += t.value;
+            if (t.status === 'pendente') totalPendente += t.value;
+        }
+    });
+    
+    const saldo = totalReceita - totalDespesa;
+    document.getElementById('summaryCards').innerHTML = `
+        <div class="stat-card receita" onclick="filterBySummary('receita')" style="cursor:pointer;"><div class="label">📈 Receitas do Mês</div><div class="value">${formatMoney(totalReceita)}</div></div>
+        <div class="stat-card despesa" onclick="filterBySummary('despesa')" style="cursor:pointer;"><div class="label">📉 Despesas do Mês</div><div class="value">${formatMoney(totalDespesa)}</div></div>
+        <div class="stat-card saldo" onclick="filterBySummary('saldo')" style="cursor:pointer;"><div class="label">💰 Saldo do Mês</div><div class="value">${formatMoney(saldo)}</div></div>
+        <div class="stat-card pendente" onclick="filterBySummary('pendente')" style="cursor:pointer;"><div class="label">⏳ Pendentes do Mês</div><div class="value">${formatMoney(totalPendente)}</div></div>`;
+    
+    renderUpcomingTransactions();
+    renderRecentTransactionsTable();
+    renderCategoryChart();
+    renderPersonChart();
+}
+
+function filterBySummary(filterType) {
+    // Clear existing filters first
+    clearFilters();
+    
+    // Set date range to current month
+    document.getElementById('filterDateStart').value = currentMonthStart();
+    document.getElementById('filterDateEnd').value = currentMonthEnd();
+    
+    // Apply specific filter based on card clicked
+    if (filterType === 'receita') {
+        document.getElementById('filterType').value = 'receita';
+    } else if (filterType === 'despesa') {
+        document.getElementById('filterType').value = 'despesa';
+    } else if (filterType === 'pendente') {
+        document.getElementById('filterStatus').value = 'pendente';
+    }
+    // For 'saldo', we show all transactions of the month (no additional filter)
+    
+    // Navigate to transactions tab
+    activeTransactionId = null;
+    document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.sidebar nav button').forEach(b => b.classList.remove('active'));
+    document.getElementById('tab-transacoes').classList.add('active');
+    document.querySelector('.sidebar nav button:nth-child(2)').classList.add('active');
+    document.getElementById('pageTitle').textContent = '💳 Transações';
+    
+    // Render filtered transactions
+    renderTransactions();
+    
+    // Scroll to top of transactions
+    document.querySelector('#tab-transacoes').scrollIntoView({behavior: 'smooth', block: 'start'});
+}
+
+function renderCategoryChart() {
+    const transactions = DB.get('transactions');
+    const cats = DB.get('categories');
+    const now = new Date();
+    const nextMonth = new Date(now.getFullYear(), now.getMonth() + 1, 1);
+    const year = nextMonth.getFullYear();
+    const month = String(nextMonth.getMonth() + 1).padStart(2, '0');
+    const prefix = `${year}-${month}`;
+
+    const categoryData = {};
+    transactions.forEach(t => {
+        if (t.date.startsWith(prefix) && t.type === 'despesa') {
+            const cat = cats.find(c => c.id === t.categoryId) || { name: 'Outros', color: '#b2bec3' };
+            if (!categoryData[cat.name]) { categoryData[cat.name] = { value: 0, color: cat.color }; }
+            categoryData[cat.name].value += t.value;
+        }
+    });
+
+    const labels = Object.keys(categoryData);
+    const values = labels.map(l => categoryData[l].value);
+    const colors = labels.map(l => categoryData[l].color);
+    const ctx = document.getElementById('categoryChart').getContext('2d');
+    if (categoryChart) { categoryChart.destroy(); }
+
+    if (labels.length === 0) {
+        ctx.font = '14px Segoe UI'; ctx.fillStyle = '#b2bec3'; ctx.textAlign = 'center';
+        ctx.fillText('Sem despesas em ' + nextMonth.toLocaleDateString('pt-BR', {month: 'long'}), ctx.canvas.width/2, ctx.canvas.height/2);
+        return;
+    }
+
+    categoryChart = new Chart(ctx, {
+        type: 'doughnut',
+        data: {
+            labels: labels,
+            datasets: [{ data: values, backgroundColor: colors, borderWidth: 2, borderColor: '#1c1f2e', hoverOffset: 15 }]
+        },
+        options: {
+            responsive: true, maintainAspectRatio: false,
+            plugins: {
+                legend: { position: 'bottom', labels: { color: '#dfe6e9', font: { size: 11 }, padding: 15, usePointStyle: true } },
+                tooltip: { callbacks: { label: function(context) { return ` ${context.label}: R$ ${context.raw.toFixed(2).replace('.', ',')}`; } } }
+            },
+            cutout: '70%'
+        }
+    });
+}
+
+function renderPersonChart() {
+    const transactions = DB.get('transactions');
+    const pers = DB.get('persons');
+    const now = new Date();
+    const nextMonth = new Date(now.getFullYear(), now.getMonth() + 1, 1);
+    const prefix = `${nextMonth.getFullYear()}-${String(nextMonth.getMonth() + 1).padStart(2, '0')}`;
+
+    const personData = {};
+    transactions.forEach(t => {
+        if (t.date.startsWith(prefix) && t.type === 'despesa') {
+            const per = pers.find(p => p.id === t.personId) || { name: 'Sem Pessoa', color: '#b2bec3' };
+            if (!personData[per.name]) { personData[per.name] = { value: 0, color: per.color }; }
+            personData[per.name].value += t.value;
+        }
+    });
+
+    const labels = Object.keys(personData);
+    const values = labels.map(l => personData[l].value);
+    const colors = labels.map(l => personData[l].color);
+    const ctx = document.getElementById('personChart').getContext('2d');
+    if (personChart) { personChart.destroy(); }
+
+    if (labels.length === 0) {
+        ctx.font = '14px Segoe UI'; ctx.fillStyle = '#b2bec3'; ctx.textAlign = 'center';
+        ctx.fillText('Sem gastos por pessoa em ' + nextMonth.toLocaleDateString('pt-BR', {month: 'long'}), ctx.canvas.width/2, ctx.canvas.height/2);
+        return;
+    }
+
+    personChart = new Chart(ctx, {
+        type: 'doughnut',
+        data: {
+            labels: labels,
+            datasets: [{ data: values, backgroundColor: colors, borderWidth: 2, borderColor: '#1c1f2e', hoverOffset: 15 }]
+        },
+        options: {
+            responsive: true, maintainAspectRatio: false,
+            plugins: {
+                legend: { position: 'bottom', labels: { color: '#dfe6e9', font: { size: 11 }, padding: 15, usePointStyle: true } },
+                tooltip: { callbacks: { label: function(context) { return ` ${context.label}: R$ ${context.raw.toFixed(2).replace('.', ',')}`; } } }
+            },
+            cutout: '70%'
+        }
+    });
+}
+
+function renderUpcomingTransactions() {
+const transactions = DB.get('transactions');
+const todayStr = today();
+const nextWeek = new Date();
+nextWeek.setDate(nextWeek.getDate() + 7);
+const nextWeekStr = nextWeek.toISOString().split('T')[0];
+const upcoming = transactions.filter(t => t.status === 'pendente' && t.date >= todayStr && t.date <= nextWeekStr).sort((a,b) => a.date.localeCompare(b.date));
+const payList = document.getElementById('upcomingPayList');
+const receiveList = document.getElementById('upcomingReceiveList');
+payList.innerHTML = ''; receiveList.innerHTML = '';
+let hasPay = false; let hasReceive = false;
+upcoming.forEach(t => {
+    const daysDiff = Math.ceil((new Date(t.date) - new Date(todayStr)) / (1000 * 60 * 60 * 24));
+    let dateLabel = daysDiff === 0 ? 'Vence Hoje' : daysDiff === 1 ? 'Vence Amanhã' : `Vence em ${daysDiff} dias`;
+    let dateClass = daysDiff <= 1 ? 'date-urgent' : 'date-normal';
+    const itemHtml = `<div class="due-item" onclick="navigateToTransaction('${t.id}')"><div class="due-info"><h4>${t.description}</h4><p>${formatDate(t.date)} • ${t.installments > 1 ? `Parcela ${t.installmentCurrent}/${t.installments}` : 'Única'}</p></div><div class="due-value"><span class="val ${t.type === 'receita' ? 'val-receive' : 'val-pay'}">${t.type === 'receita' ? '+' : '-'} ${formatMoney(t.value)}</span><span class="due-date ${dateClass}">${dateLabel}</span></div></div>`;
+    if (t.type === 'despesa') { payList.innerHTML += itemHtml; hasPay = true; }
+    else if (t.type === 'receita') { receiveList.innerHTML += itemHtml; hasReceive = true; }
+});
+if (!hasPay) payList.innerHTML = '<p style="font-size:12px;color:var(--text2);text-align:center;padding:10px;">Nenhuma conta a pagar nesta semana.</p>';
+if (!hasReceive) receiveList.innerHTML = '<p style="font-size:12px;color:var(--text2);text-align:center;padding:10px;">Nenhuma conta a receber nesta semana.</p>';
+}
+
+function navigateToTransaction(id) {
+    activeTransactionId = id;
+    // Switch to transactions tab directly (avoid switchTab event issues)
+    document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.sidebar nav button').forEach(b => b.classList.remove('active'));
+    document.getElementById('tab-transacoes').classList.add('active');
+    document.querySelector('.sidebar nav button:nth-child(2)').classList.add('active');
+    document.getElementById('pageTitle').textContent = '💳 Transações';
+    
+    // Clear all text/select filters
+    ['filterName', 'filterPerson', 'filterCategory', 'filterAccount', 'filterType', 'filterStatus'].forEach(id => document.getElementById(id).value = '');
+    
+    // Get the transaction to find its date
+    const transactions = DB.get('transactions');
+    const targetTrans = transactions.find(t => t.id === id);
+    
+    // Set date range to include this transaction (use its month)
+    if (targetTrans) {
+        const transDate = new Date(targetTrans.date);
+        const monthStart = new Date(transDate.getFullYear(), transDate.getMonth(), 1).toISOString().split('T')[0];
+        const monthEnd = new Date(transDate.getFullYear(), transDate.getMonth() + 1, 0).toISOString().split('T')[0];
+        document.getElementById('filterDateStart').value = monthStart;
+        document.getElementById('filterDateEnd').value = monthEnd;
+    } else {
+        // Fallback: clear date filters if transaction not found
+        document.getElementById('filterDateStart').value = '';
+        document.getElementById('filterDateEnd').value = '';
+    }
+    
+    // Render transactions with the new filters
+    renderTransactions();
+    
+    // Scroll to the transaction and open edit modal
+    setTimeout(() => {
+        const row = document.querySelector(`#transactionsTable tr[data-id="${id}"]`);
+        if(row) { 
+            row.scrollIntoView({behavior: "smooth", block: "center"}); 
+            row.classList.add('active');
+            // Open edit modal after scrolling
+            setTimeout(() => editTransaction(id), 500);
+        }
+    }, 100);
+}
+
+function renderRecentTransactionsTable() {
+    const allTransactions = DB.get('transactions');
+    const now = new Date();
+    // Próximo mês
+    const nextMonth = new Date(now.getFullYear(), now.getMonth() + 1, 1);
+    const year = nextMonth.getFullYear();
+    const month = String(nextMonth.getMonth() + 1).padStart(2, '0');
+    const prefix = `${year}-${month}`;
+    
+    // Filtra transações do próximo mês
+    const transactions = allTransactions.filter(t => t.date.startsWith(prefix)).sort((a,b) => a.date.localeCompare(b.date));
+    
+    const tbody = document.getElementById('recentTransactionsTable');
+    const cats = DB.get('categories'); const accs = DB.get('accounts'); const pers = DB.get('persons');
+    
+    // Atualiza o título da seção
+    const sectionTitle = document.querySelector('#tab-resumo .table-wrap:last-child .table-toolbar .title');
+    if (sectionTitle) {
+        const monthName = nextMonth.toLocaleDateString('pt-BR', { month: 'long' });
+        sectionTitle.innerHTML = `💳 Transações de ${monthName.charAt(0).toUpperCase() + monthName.slice(1)} / ${year}`;
+    }
+
+    if (transactions.length === 0) { 
+        tbody.innerHTML = '<tr><td colspan="8"><div class="empty-state"><div class="icon">📭</div><p>Nenhuma transação para o próximo mês</p></div></td></tr>'; 
+        return; 
+    }
+
+    let totalBruto = 0; // Soma de todas as receitas
+    let totalDespesas = 0; // Soma de todas as despesas
+    
+    let html = transactions.map(t => {
+        const cat = cats.find(c => c.id === t.categoryId) || { name: '-', color: '#888' };
+        const per = pers.find(p => p.id === t.personId) || { name: '—', color: '#888' };
+        const acc = accs.find(a => a.id === (t.type === 'transferencia' ? t.transferToAccountId || t.accountId : t.accountId)) || { name: '-' };
+        const isPending = t.status === 'pendente';
+        
+        if (t.type === 'receita') totalBruto += t.value;
+        else if (t.type === 'despesa') totalDespesas += t.value;
+
+        return `<tr class="trans-row" onclick="navigateToTransaction('${t.id}')">
+            <td>${formatDate(t.date)}</td><td>${t.description}</td><td><span style="color:${per.color}">●</span> ${per.name}</td><td><span style="color:${cat.color}">●</span> ${cat.name}</td><td>${acc.name}</td><td style="color:${t.type === 'receita' ? 'var(--green2)' : 'var(--red2)'};font-weight:700;">${formatMoney(t.value)}</td><td><span class="badge ${t.status === 'pago' ? 'badge-pago' : 'badge-pendente'}">${t.status === 'pago' ? '✓ Pago' : '⏳ Pendente'}</span></td><td onclick="event.stopPropagation()">${isPending ? `<button class="action-btn-sm btn-pay-sm" onclick="quickPay('${t.id}')">✓</button>` : ''}<button class="action-btn-sm btn-edit-sm" onclick="editTransaction('${t.id}')">✏️</button></td>
+        </tr>`;
+    }).join('');
+
+    const totalLiquido = totalBruto - totalDespesas;
+
+    // Adiciona linhas de totais ao final
+    html += `
+        <tr style="background: rgba(0,184,148,0.08); font-weight: 700; border-top: 2px solid var(--border);">
+            <td colspan="5" style="text-align: right; padding: 16px 24px; font-size: 14px; color: var(--text);">TOTAL RECEITAS (BRUTO):</td>
+            <td style="color: var(--green2); font-size: 16px;">${formatMoney(totalBruto)}</td>
+            <td colspan="2"></td>
+        </tr>
+        <tr style="background: rgba(108,92,231,0.15); font-weight: 900; border-top: 1px solid var(--border);">
+            <td colspan="5" style="text-align: right; padding: 16px 24px; font-size: 15px; color: var(--text);">RESULTADO LÍQUIDO DO MÊS:</td>
+            <td style="color: ${totalLiquido >= 0 ? 'var(--blue)' : 'var(--red2)'}; font-size: 18px; text-shadow: 0 0 10px rgba(116,185,255,0.2);">${formatMoney(totalLiquido)}</td>
+            <td colspan="2"></td>
+        </tr>
+    `;
+
+    tbody.innerHTML = html;
+}
+
+function quickPay(id) { toggleStatus(id); renderSummary(); }
+
+function renderInsights() {
+    const container = document.getElementById('insightsContainer');
+    const transactions = DB.get('transactions');
+    const todayStr = today();
+    let insightsHTML = '';
+    const dueToday = transactions.filter(t => t.status === 'pendente' && t.date === todayStr);
+    if (dueToday.length > 0) {
+        const totalDue = dueToday.reduce((acc, t) => acc + t.value, 0);
+        insightsHTML += `<div class="insight-card type-urgent"><span class="insight-icon">🚨</span><div class="insight-content"><span class="insight-title">Atenção: Contas Vencendo Hoje!</span><span class="insight-text">Você tem <strong>${dueToday.length} conta(s)</strong> vencendo hoje totalizando <strong>${formatMoney(totalDue)}</strong>.</span></div><button class="dismiss-insight" onclick="this.parentElement.remove()">×</button></div>`;
+    }
+    const now = new Date(); const monthStart = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split('T')[0];
+    let totalRec = 0, totalDesp = 0;
+    transactions.forEach(t => { if(t.date >= monthStart && t.type !== 'transferencia') { if(t.type === 'receita') totalRec += t.value; else totalDesp += t.value; } });
+    if (totalRec > totalDesp) insightsHTML += `<div class="insight-card type-success"><span class="insight-icon">🎉</span><div class="insight-content"><span class="insight-title">Ótima notícia!</span><span class="insight-text">Suas receitas este mês estão <strong>${Math.round(((totalRec-totalDesp)/totalDesp)*100) || 100}% acima</strong> das despesas. Continue assim!</span></div><button class="dismiss-insight" onclick="this.parentElement.remove()">×</button></div>`;
+    insightsHTML += `<div class="insight-card type-info"><span class="insight-icon">💡</span><div class="insight-content"><span class="insight-title">Dica do Sistema</span><span class="insight-text">Revise suas categorias e pessoas mensalmente para manter seus relatórios precisos.</span></div><button class="dismiss-insight" onclick="this.parentElement.remove()">×</button></div>`;
+    container.innerHTML = insightsHTML;
+}
+
+function getFilteredTransactions() {
+let t = DB.get('transactions');
+const name = document.getElementById('filterName').value.toLowerCase();
+const per = document.getElementById('filterPerson').value;
+const cat = document.getElementById('filterCategory').value;
+const acc = document.getElementById('filterAccount').value;
+const type = document.getElementById('filterType').value;
+const status = document.getElementById('filterStatus').value;
+const dateStart = document.getElementById('filterDateStart').value;
+const dateEnd = document.getElementById('filterDateEnd').value;
+if (name) t = t.filter(x => x.description.toLowerCase().includes(name));
+if (per) t = t.filter(x => x.personId === per);
+if (cat) t = t.filter(x => x.categoryId === cat);
+if (acc) t = t.filter(x => x.accountId === acc || x.transferFromAccountId === acc || x.transferToAccountId === acc);
+if (type) t = t.filter(x => x.type === type);
+if (status) t = t.filter(x => x.status === status);
+if (dateStart) t = t.filter(x => x.date >= dateStart);
+if (dateEnd) t = t.filter(x => x.date <= dateEnd);
+return t.sort((a, b) => {
+        return transactionSortOrder === 'asc' 
+            ? a.date.localeCompare(b.date) 
+            : b.date.localeCompare(a.date);
+    });
+}
+
+function renderTransactions() {
+const transactions = getFilteredTransactions();
+const tbody = document.getElementById('transactionsTable');
+const cats = DB.get('categories'); const accs = DB.get('accounts'); const pers = DB.get('persons');
+if (transactions.length === 0) { tbody.innerHTML = '<tr><td colspan="10"><div class="empty-state"><div class="icon">📭</div><p>Nenhuma transação encontrada</p></div></td></tr>'; return; }
+tbody.innerHTML = transactions.map(t => {
+const cat = cats.find(c => c.id === t.categoryId) || { name: '-', color: '#888' };
+const per = pers.find(p => p.id === t.personId) || { name: '—', color: '#888' };
+const accId = t.type === 'transferencia' ? (t.transferToAccountId || t.accountId) : t.accountId;
+const acc = accs.find(a => a.id === accId) || { name: '-' };
+const fromAcc = t.type === 'transferencia' && t.transferFromAccountId ? (accs.find(a => a.id === t.transferFromAccountId) || { name: '' }) : null;
+const accDisplay = fromAcc ? `${fromAcc.name} → ${acc.name}` : acc.name;
+const parcelasInfo = t.installments > 1 ? `<span title="Parcela ${t.installmentCurrent} de ${t.installments}">${t.installmentCurrent}/${t.installments}</span>` : '-';
+const obsIcon = t.observation ? `<span title="📝 ${t.observation}" style="cursor:help;margin-left:4px;">💬</span>` : '';
+const typeBadge = t.type === 'receita' ? 'badge-receita' : t.type === 'despesa' ? 'badge-despesa' : 'badge-transfer';
+const typeText = t.type === 'receita' ? '↑ Receita' : t.type === 'despesa' ? '↓ Despesa' : '🔄 Transferência';
+const valorColor = t.type === 'receita' ? 'var(--green2)' : t.type === 'despesa' ? 'var(--red2)' : 'var(--transfer2)';
+const isActive = t.id === activeTransactionId ? 'active' : '';
+return `<tr data-id="${t.id}" class="${isActive}">
+<td>${formatDate(t.createdAt || t.date)}</td><td>${formatDate(t.date)}</td><td>${t.description}${obsIcon}</td>
+<td><span style="color:${per.color}">●</span> ${per.name}</td>
+<td><span style="color:${cat.color}">●</span> ${cat.name}</td><td>${accDisplay}</td>
+<td style="color:${valorColor};font-weight:700;">${formatMoney(t.value)}</td>
+<td style="text-align:center;">${parcelasInfo}</td>
+<td><span class="badge ${typeBadge}">${typeText}</span></td>
+<td><span class="badge ${t.status === 'pago' ? 'badge-pago' : 'badge-pendente'}" style="cursor:pointer;" onclick="toggleStatus('${t.id}')">${t.status === 'pago' ? '✓ Pago' : '⏳ Pendente'}</span></td>
+<td><div class="actions-cell">
+${t.installments > 1 ? `<button class="btn btn-sm btn-outline" onclick="openParcelamentoModal('${t.id}')" title="Editar Parcelamento">📋</button>` : ''}
+<button class="btn btn-sm btn-outline" onclick="editTransaction('${t.id}')" title="Editar">✏️</button>
+<button class="btn btn-sm btn-outline" onclick="openParcelaModal('${t.id}')" title="Editar esta parcela">⚙️</button>
+<button class="btn btn-sm btn-danger" onclick="deleteTransaction('${t.id}')" title="Excluir">🗑️</button>
+</div></td></tr>`;
+}).join('');
+renderFilterCards();
+if(activeTransactionId) { setTimeout(() => { const row = document.querySelector(`#transactionsTable tr[data-id="${activeTransactionId}"]`); if(row) row.classList.remove('active'); activeTransactionId = null; }, 3000); }
+}
+
+function clearFilters() {
+['filterName','filterPerson','filterCategory','filterAccount','filterType','filterStatus'].forEach(id => document.getElementById(id).value = '');
+document.getElementById('filterDateStart').value = currentMonthStart();
+document.getElementById('filterDateEnd').value = currentMonthEnd();
+document.querySelectorAll('.filter-card').forEach(c => c.classList.remove('active'));
+renderTransactions();
+}
+
+function toggleTransactionSort() {
+    transactionSortOrder = transactionSortOrder === 'asc' ? 'desc' : 'asc';
+    const icon = document.getElementById('sortIcon');
+    if (icon) icon.textContent = transactionSortOrder === 'asc' ? '▲' : '▼';
+    renderTransactions();
+}
+
+function toggleStatus(id) {
+const transactions = DB.get('transactions');
+const t = transactions.find(x => x.id === id);
+if (t) { t.status = t.status === 'pago' ? 'pendente' : 'pago'; DB.set('transactions', transactions); refreshAll(); showToast(t.status === 'pago' ? 'Marcado como pago ✓' : 'Marcado como pendente ⏳', 'info'); }
+}
+
+function switchCalcMode() {
+const mode = document.querySelector('input[name="calcMode"]:checked').value;
+const totalGroup = document.getElementById('transValue').closest('.form-group');
+const installmentGroup = document.getElementById('installmentValueGroup');
+if (mode === 'parcela') { installmentGroup.style.display = 'block'; totalGroup.style.opacity = '0.6'; }
+else { installmentGroup.style.display = 'none'; totalGroup.style.opacity = '1'; }
+toggleParcelas();
+}
+
+function handleValueInput(source) {
+const mode = document.querySelector('input[name="calcMode"]:checked').value;
+const numParcelas = parseInt(document.getElementById('transParcelas').value) || 1;
+const totalValRaw = document.getElementById('transValue').value;
+const installmentValRaw = document.getElementById('transInstallmentValue').value;
+if (source === 'total' && mode === 'total') {
+const total = parseMoney(totalValRaw);
+const iv = numParcelas > 0 ? Math.round((total / numParcelas) * 100) / 100 : 0;
+document.getElementById('transInstallmentValue').value = formatMoney(iv).replace('R$ ', '');
+} else if (source === 'parcela' && mode === 'parcela') {
+const installment = parseMoney(installmentValRaw);
+const tv = numParcelas > 0 ? Math.round((installment * numParcelas) * 100) / 100 : 0;
+document.getElementById('transValue').value = formatMoney(tv).replace('R$ ', '');
+}
+toggleParcelas();
+}
+
+function openTransactionModal(type) {
+    tempParcelasEdits = {};
+    document.getElementById('transId').value = '';
+    document.getElementById('transType').value = type;
+    document.getElementById('modalTransactionTitle').textContent = type === 'receita' ? '➕ Nova Receita' : '➕ Nova Despesa';
+    document.getElementById('transDesc').value = '';
+    document.getElementById('transValue').value = '';
+    document.getElementById('transInstallmentValue').value = '';
+    document.getElementById('transCreatedAt').value = today();
+document.getElementById('transDate').value = today();
+    document.getElementById('transParcelas').value = '1';
+    document.getElementById('transStatus').value = 'pendente';
+    document.getElementById('transObservation').value = '';
+    document.getElementById('transPerson').value = '';
+    document.querySelector('input[name="calcMode"][value="total"]').checked = true;
+    document.getElementById('installmentValueGroup').style.display = 'none';
+    document.getElementById('parcelasPreview').style.display = 'none';
+    populateSelects();
+    
+    // =========================================================================
+    // 📅 ADICIONAR LISTENERS AQUI (quando o modal já existe no DOM)
+    // =========================================================================
+    const dateInput = document.getElementById('transDate');
+    if (dateInput) {
+        // Remove listeners antigos para não duplicar
+        const newDateInput = dateInput.cloneNode(true);
+        dateInput.parentNode.replaceChild(newDateInput, dateInput);
+        
+        // Adiciona novo listener
+        newDateInput.addEventListener('change', function() {
+            const numParcelas = parseInt(document.getElementById('transParcelas').value) || 1;
+            if (numParcelas > 1) {
+                recalculateParcelasDates();
+            }
+        });
+    }
+    
+    openModal('modalTransaction');
+}
+
+function editTransaction(id) {
+const transactions = DB.get('transactions');
+const t = transactions.find(x => x.id === id);
+if (!t) return;
+tempParcelasEdits = {};
+document.getElementById('transId').value = t.id;
+document.getElementById('transType').value = t.type;
+document.getElementById('modalTransactionTitle').textContent = '✏️ Editar Transação';
+document.getElementById('transDesc').value = t.description;
+document.getElementById('transValue').value = formatMoney(t.totalValue).replace('R$ ', '');
+document.getElementById('transInstallmentValue').value = formatMoney(t.value).replace('R$ ', '');
+document.getElementById('transCreatedAt').value = t.createdAt || t.date;
+document.getElementById('transDate').value = t.date;
+document.getElementById('transParcelas').value = t.installments || 1;
+document.getElementById('transStatus').value = t.status;
+document.getElementById('transObservation').value = t.observation || '';
+document.getElementById('transPerson').value = t.personId || '';
+if (t.installments > 1 && t.groupId) {
+const groupParcels = transactions.filter(x => x.groupId === t.groupId).sort((a, b) => a.installmentCurrent - b.installmentCurrent);
+groupParcels.forEach((parcela, index) => {
+tempParcelasEdits[index] = { value: parcela.value, date: parcela.date, obs: parcela.observation || '', status: parcela.status };
+});
+const autoValue = Math.round((t.totalValue / t.installments) * 100) / 100;
+if (Math.abs(t.value - autoValue) > 0.01) { document.querySelector('input[name="calcMode"][value="parcela"]').checked = true; document.getElementById('installmentValueGroup').style.display = 'block'; }
+else { document.querySelector('input[name="calcMode"][value="total"]').checked = true; document.getElementById('installmentValueGroup').style.display = 'none'; }
+} else { document.querySelector('input[name="calcMode"][value="total"]').checked = true; document.getElementById('installmentValueGroup').style.display = 'none'; }
+populateSelects();
+setTimeout(() => {
+document.getElementById('transCategory').value = t.categoryId;
+document.getElementById('transAccount').value = t.accountId;
+}, 50);
+toggleParcelas();
+openModal('modalTransaction');
+}
+
+function saveTransaction() {
+const id = document.getElementById('transId').value;
+const type = document.getElementById('transType').value;
+const desc = document.getElementById('transDesc').value.trim();
+const mode = document.querySelector('input[name="calcMode"]:checked').value;
+let totalValue, installmentValue;
+if (mode === 'total') { totalValue = parseMoney(document.getElementById('transValue').value); }
+else { installmentValue = parseMoney(document.getElementById('transInstallmentValue').value); }
+const personId = document.getElementById('transPerson').value || '';
+const categoryId = document.getElementById('transCategory').value;
+const accountId = document.getElementById('transAccount').value;
+const createdAt = document.getElementById('transCreatedAt').value || today();
+const date = document.getElementById('transDate').value;
+const numParcelas = parseInt(document.getElementById('transParcelas').value) || 1;
+const status = document.getElementById('transStatus').value;
+const observation = document.getElementById('transObservation').value.trim();
+if (!desc) return showToast('Informe a descrição', 'error');
+if (mode === 'total' && (!totalValue || totalValue <= 0)) return showToast('Informe o valor total', 'error');
+if (mode === 'parcela' && (!installmentValue || installmentValue <= 0)) return showToast('Informe o valor da parcela', 'error');
+if (!categoryId) return showToast('Selecione a categoria', 'error');
+if (!accountId) return showToast('Selecione a conta', 'error');
+if (!date) return showToast('Informe a data', 'error');
+if (numParcelas < 1) return showToast('Quantidade de parcelas inválida', 'error');
+if (mode === 'total') { installmentValue = Math.round((totalValue / numParcelas) * 100) / 100; }
+else { totalValue = Math.round((installmentValue * numParcelas) * 100) / 100; }
+let transactions = DB.get('transactions');
+let originalGroupId = '';
+if (id) { const t = transactions.find(x => x.id === id); if (t && t.groupId) originalGroupId = t.groupId; if (t && t.groupId) { transactions = transactions.filter(x => x.groupId !== t.groupId); } else { transactions = transactions.filter(x => x.id !== id); } }
+if (numParcelas > 1) {
+const baseDate = new Date(date); const groupId = originalGroupId || genId();
+for (let i = 0; i < numParcelas; i++) {
+const pDate = new Date(baseDate); pDate.setMonth(pDate.getMonth() + i); if (pDate.getDate() !== baseDate.getDate()) pDate.setDate(0);
+const parcelValue = tempParcelasEdits[i]?.value || installmentValue;
+const parcelDate = tempParcelasEdits[i]?.date || pDate.toISOString().split('T')[0];
+const parcelObs = tempParcelasEdits[i]?.obs || '';
+const parcelStatus = tempParcelasEdits[i]?.status || (i === 0 ? status : 'pendente');
+// Calcula o total real somando as parcelas (caso haja edições manuais)
+const calculatedTotal = mode === 'total' ? totalValue : Math.round((installmentValue * numParcelas) * 100) / 100;
+transactions.push({ id: genId(), groupId, type, description: desc, value: parcelValue, totalValue: calculatedTotal, personId, categoryId, accountId, date: parcelDate, createdAt, status: parcelStatus, installments: numParcelas, installmentCurrent: i + 1, observation: parcelObs });
+}
+} else {
+transactions.push({ id: genId(), groupId: '', type, description: desc, value: totalValue, totalValue, personId, categoryId, accountId, date, createdAt, status, installments: 1, installmentCurrent: 1, observation });
+}
+tempParcelasEdits = {};
+DB.set('transactions', transactions);
+closeModal('modalTransaction'); refreshAll();
+showToast(numParcelas > 1 ? 'Parcelas criadas com sucesso!' : 'Transação criada!');
+}
+
+function openTransferModal() {
+document.getElementById('transferId').value = '';
+document.getElementById('transferDesc').value = '';
+document.getElementById('transferValue').value = '';
+document.getElementById('transferDate').value = today();
+document.getElementById('transferStatus').value = 'pago';
+document.getElementById('transferObservation').value = '';
+document.getElementById('transferCategory').value = '';
+document.getElementById('transferPerson').value = '';
+populateSelects();
+setTimeout(() => {
+const from = document.getElementById('transferFromAccount'); const to = document.getElementById('transferToAccount');
+if (from.options.length > 1 && to.options.length > 1) { from.selectedIndex = 1; to.selectedIndex = from.selectedIndex === 1 ? 2 : 1; }
+}, 50);
+openModal('modalTransfer');
+}
+
+function saveTransfer() {
+const desc = document.getElementById('transferDesc').value.trim();
+const fromId = document.getElementById('transferFromAccount').value;
+const toId = document.getElementById('transferToAccount').value;
+const value = parseMoney(document.getElementById('transferValue').value);
+const date = document.getElementById('transferDate').value;
+const categoryId = document.getElementById('transferCategory').value || '';
+const personId = document.getElementById('transferPerson').value || '';
+const status = document.getElementById('transferStatus').value;
+const observation = document.getElementById('transferObservation').value.trim();
+if (!desc) return showToast('Informe a descrição', 'error');
+if (!fromId) return showToast('Selecione a conta de origem', 'error');
+if (!toId) return showToast('Selecione a conta de destino', 'error');
+if (fromId === toId) return showToast('Origem e destino devem ser diferentes', 'error');
+if (!value || value <= 0) return showToast('Informe um valor válido', 'error');
+if (!date) return showToast('Informe a data', 'error');
+let transactions = DB.get('transactions');
+transactions.push({ id: genId(), groupId: '', type: 'transferencia', description: desc + ' (Saída)', value, totalValue: value, personId, categoryId, accountId: fromId, transferFromAccountId: fromId, transferToAccountId: toId, date, createdAt: date, status, installments: 1, installmentCurrent: 1, observation, isTransferEntry: false });
+transactions.push({ id: genId(), groupId: '', type: 'transferencia', description: desc + ' (Entrada)', value, totalValue: value, personId, categoryId, accountId: toId, transferFromAccountId: fromId, transferToAccountId: toId, date, createdAt: date, status, installments: 1, installmentCurrent: 1, observation, isTransferEntry: true });
+DB.set('transactions', transactions); closeModal('modalTransfer'); refreshAll(); showToast('🔄 Transferência realizada com sucesso!');
+}
+
+function deleteTransaction(id) {
+if (!confirm('Tem certeza que deseja excluir esta transação?')) return;
+let transactions = DB.get('transactions');
+const t = transactions.find(x => x.id === id);
+if (t && t.type === 'transferencia' && t.transferFromAccountId && t.transferToAccountId) {
+const transferId = t.transferFromAccountId + '|' + t.transferToAccountId + '|' + t.date + '|' + t.value;
+transactions = transactions.filter(x => { if (x.type !== 'transferencia' || !x.transferFromAccountId || !x.transferToAccountId) return x.id !== id; return (x.transferFromAccountId + '|' + x.transferToAccountId + '|' + x.date + '|' + x.value) !== transferId; });
+} else if (t && t.installments > 1 && t.groupId) {
+if (confirm('Esta transação faz parte de um parcelamento. Deseja excluir TODAS as parcelas?\n\nOK = Todas\nCancelar = Apenas esta')) { transactions = transactions.filter(x => x.groupId !== t.groupId); } else { transactions = transactions.filter(x => x.id !== id); }
+} else { transactions = transactions.filter(x => x.id !== id); }
+DB.set('transactions', transactions); refreshAll(); showToast('Transação excluída!', 'error');
+}
+
+function openParcelaPreviewEdit(index, numParcelas, baseInstallmentValue, baseDate) {
+const currentValue = tempParcelasEdits[index]?.value || baseInstallmentValue;
+const pDate = new Date(baseDate); pDate.setMonth(pDate.getMonth() + index); if (pDate.getDate() !== baseDate.getDate()) pDate.setDate(0);
+const currentDate = tempParcelasEdits[index]?.date || pDate.toISOString().split('T')[0];
+document.getElementById('ppIndex').value = index; document.getElementById('ppNum').value = `Parcela ${index + 1} de ${numParcelas}`;
+document.getElementById('ppValue').value = formatMoney(currentValue).replace('R$ ', ''); document.getElementById('ppDate').value = currentDate;
+openModal('modalParcelaPreview');
+}
+
+function saveParcelaPreview() {
+const index = parseInt(document.getElementById('ppIndex').value);
+const newValue = parseMoney(document.getElementById('ppValue').value);
+const newDate = document.getElementById('ppDate').value;
+if (!newValue || newValue <= 0) { showToast('Informe um valor válido', 'error'); return; }
+if (!newDate) { showToast('Informe a data', 'error'); return; }
+const existingObs = tempParcelasEdits[index]?.obs || '';
+const existingStatus = tempParcelasEdits[index]?.status || 'pendente';
+tempParcelasEdits[index] = { value: newValue, date: newDate, obs: existingObs, status: existingStatus };
+closeModal('modalParcelaPreview'); toggleParcelas(); showToast(`Parcela ${index + 1} atualizada!`);
+}
+
+function updateParcelaObs(index, obsValue) {
+if (!tempParcelasEdits[index]) {
+const mode = document.querySelector('input[name="calcMode"]:checked').value;
+const totalValue = parseMoney(document.getElementById('transValue').value);
+const num = parseInt(document.getElementById('transParcelas').value) || 1;
+let installmentValue = mode === 'total' ? (num > 0 ? Math.round((totalValue / num) * 100) / 100 : 0) : parseMoney(document.getElementById('transInstallmentValue').value);
+const date = document.getElementById('transDate').value || today(); const baseDate = new Date(date);
+const pDate = new Date(baseDate); pDate.setMonth(pDate.getMonth() + index); if (pDate.getDate() !== baseDate.getDate()) pDate.setDate(0);
+tempParcelasEdits[index] = { value: installmentValue, date: pDate.toISOString().split('T')[0], obs: obsValue };
+} else { tempParcelasEdits[index].obs = obsValue; }
+}
+
+function addParcela() {
+const num = parseInt(document.getElementById('transParcelas').value) || 1;
+const mode = document.querySelector('input[name="calcMode"]:checked').value;
+const totalValue = parseMoney(document.getElementById('transValue').value);
+const date = document.getElementById('transDate').value || today();
+let installmentValue = mode === 'total' ? (num > 0 ? Math.round((totalValue / num) * 100) / 100 : 0) : parseMoney(document.getElementById('transInstallmentValue').value);
+const baseDate = new Date(date); const pDate = new Date(baseDate); pDate.setMonth(pDate.getMonth() + num); if (pDate.getDate() !== baseDate.getDate()) pDate.setDate(0);
+tempParcelasEdits[num] = { value: installmentValue, date: pDate.toISOString().split('T')[0], obs: '' };
+document.getElementById('transParcelas').value = num + 1; toggleParcelas(); showToast('Parcela adicionada!');
+}
+
+function removeParcela() {
+const num = parseInt(document.getElementById('transParcelas').value) || 1;
+if (num <= 1) { showToast('Mínimo de 1 parcela', 'error'); return; }
+delete tempParcelasEdits[num - 1]; document.getElementById('transParcelas').value = num - 1; toggleParcelas(); showToast('Parcela removida!');
+}
+
+function toggleParcelas() {
+const num = parseInt(document.getElementById('transParcelas').value) || 1;
+const mode = document.querySelector('input[name="calcMode"]:checked').value;
+let totalValue = parseMoney(document.getElementById('transValue').value);
+let installmentValue = parseMoney(document.getElementById('transInstallmentValue').value);
+if (mode === 'total') { totalValue = parseMoney(document.getElementById('transValue').value); installmentValue = num > 0 ? Math.round((totalValue / num) * 100) / 100 : 0; document.getElementById('transInstallmentValue').value = formatMoney(installmentValue).replace('R$ ', ''); }
+else { installmentValue = parseMoney(document.getElementById('transInstallmentValue').value); totalValue = num > 0 ? Math.round((installmentValue * num) * 100) / 100 : 0; document.getElementById('transValue').value = formatMoney(totalValue).replace('R$ ', ''); }
+const date = document.getElementById('transDate').value || today();
+if (num <= 1) { document.getElementById('parcelasPreview').style.display = 'none'; return; }
+document.getElementById('parcelasPreview').style.display = 'block'; renderParcelasPreview(num, totalValue, date, installmentValue);
+}
+
+function renderParcelasPreview(num, totalValue, date, installmentValue) {
+const baseDate = new Date(date); let html = '';
+for (let i = 0; i < num; i++) {
+const pDate = new Date(baseDate); pDate.setMonth(pDate.getMonth() + i); if (pDate.getDate() !== baseDate.getDate()) pDate.setDate(0);
+const displayValue = tempParcelasEdits[i]?.value || installmentValue;
+const displayDate = tempParcelasEdits[i]?.date || pDate.toISOString().split('T')[0];
+const displayObs = tempParcelasEdits[i]?.obs || '';
+const isEdited = tempParcelasEdits[i] ? 'style="border: 2px solid var(--yellow);"' : '';
+html += `<div class="parcela-item" ${isEdited}><div class="p-header"><span class="p-num">${i + 1}/${num}</span><span class="p-val" style="color:${tempParcelasEdits[i] ? 'var(--yellow)' : 'var(--accent2)'}">${formatMoney(displayValue)}</span></div><span class="p-date">📅 ${formatDate(displayDate)}</span>
+<div class="p-obs"><input type="text" placeholder="📝 Obs. da parcela..." value="${displayObs}" onchange="updateParcelaObs(${i}, this.value)" onclick="event.stopPropagation()"></div>
+<div class="p-actions"><button class="btn btn-sm btn-outline" onclick="openParcelaPreviewEdit(${i}, ${num}, ${installmentValue}, new Date('${date}'))">✏️ Editar</button>${i === num - 1 ? `<button class="btn btn-sm btn-danger" onclick="removeParcela()">➖</button>` : ''}</div></div>`;
+}
+html += `<div class="parcela-item" style="display:flex;align-items:center;justify-content:center;cursor:pointer;border:2px dashed var(--border);" onclick="addParcela()"><span style="color:var(--text2);font-size:14px;">➕ Adicionar Parcela</span></div>`;
+let displayTotal = 0;
+for (let i = 0; i < num; i++) displayTotal = Math.round((displayTotal + (tempParcelasEdits[i]?.value || installmentValue)) * 100) / 100;
+html += `<div style="grid-column:1/-1;margin-top:8px;padding:10px 14px;background:var(--card2);border:1px solid var(--border);border-radius:8px;display:flex;justify-content:space-between;align-items:center;font-size:13px;"><span style="color:var(--text2);">Total das parcelas:</span><span style="font-weight:700;color:var(--accent2);">${formatMoney(displayTotal)}</span></div>`;
+document.getElementById('parcelasGrid').innerHTML = html;
+}
+
+function openParcelaModal(transId) {
+const transactions = DB.get('transactions'); const t = transactions.find(x => x.id === transId); if (!t) return;
+document.getElementById('parcelaTransId').value = transId; document.getElementById('parcelaNum').value = t.installmentCurrent || 1;
+document.getElementById('parcelaDesc').value = t.description; document.getElementById('parcelaValue').value = formatMoney(t.value).replace('R$ ', '');
+document.getElementById('parcelaNumber').value = t.installmentCurrent || 1; document.getElementById('parcelaDate').value = t.date;
+document.getElementById('parcelaOriginalStatus').value = t.status; document.getElementById('parcelaObservation').value = t.observation || '';
+populateSelects(); document.getElementById('parcelaStatus').value = t.status;
+setTimeout(() => { document.getElementById('parcelaCategory').value = t.categoryId; document.getElementById('parcelaAccount').value = t.accountId; }, 50);
+openModal('modalParcela');
+}
+
+function saveParcela() {
+const id = document.getElementById('parcelaTransId').value;
+let transactions = JSON.parse(localStorage.getItem('fin_transactions')) || [];
+const idx = transactions.findIndex(t => t.id === id); if (idx === -1) { alert("Erro crítico: Parcela não encontrada no banco de dados."); return; }
+const novoValor = parseMoney(document.getElementById('parcelaValue').value);
+const novaData = document.getElementById('parcelaDate').value;
+const novoStatus = document.getElementById('parcelaStatus').value;
+const originalStatus = document.getElementById('parcelaOriginalStatus').value;
+const novaDesc = document.getElementById('parcelaDesc').value.trim();
+const novaCat = document.getElementById('parcelaCategory').value;
+const novaConta = document.getElementById('parcelaAccount').value;
+const novaObs = document.getElementById('parcelaObservation').value.trim();
+if (!isNaN(novoValor)) transactions[idx].value = novoValor;
+if (novaData) transactions[idx].date = novaData;
+if (novoStatus !== originalStatus) transactions[idx].status = novoStatus;
+if (novaDesc) transactions[idx].description = novaDesc;
+if (novaCat) transactions[idx].categoryId = novaCat;
+if (novaConta) transactions[idx].accountId = novaConta;
+transactions[idx].observation = novaObs;
+localStorage.setItem('fin_transactions', JSON.stringify(transactions));
+closeModal('modalParcela'); refreshAll(); showToast('Alteração salva. Outras parcelas intocadas.');
+}
+
+function openParcelamentoModal(transId) {
+    const transactions = DB.get('transactions');
+    const t = transactions.find(x => x.id === transId);
+    if (!t) return;
+    
+    const groupTransactions = transactions.filter(x => x.groupId === t.groupId).sort((a, b) => a.installmentCurrent - b.installmentCurrent);
+    
+    // Calcula o valor total real somando todas as parcelas do grupo
+    const realTotalValue = groupTransactions.reduce((acc, curr) => acc + curr.value, 0);
+    
+    document.getElementById('parcelamentoTransId').value = transId;
+    document.getElementById('parcelamentoValue').value = formatMoney(realTotalValue).replace('R$ ', '');
+    document.getElementById('parcelamentoNum').value = groupTransactions.length;
+    document.getElementById('parcelamentoDate').value = groupTransactions[0].date;
+    
+    updateParcelamentoPreview();
+    openModal('modalParcelamento');
+}
+
+function updateParcelamentoPreview() {
+const totalValue = parseMoney(document.getElementById('parcelamentoValue').value);
+const num = parseInt(document.getElementById('parcelamentoNum').value) || 1;
+const date = document.getElementById('parcelamentoDate').value || today();
+const installmentValue = Math.round((totalValue / num) * 100) / 100;
+const baseDate = new Date(date); let html = '<div class="parcelas-grid">';
+for (let i = 0; i < num; i++) {
+const pDate = new Date(baseDate); pDate.setMonth(pDate.getMonth() + i); if (pDate.getDate() !== baseDate.getDate()) pDate.setDate(0);
+html += `<div class="parcela-item"><div class="p-header"><span class="p-num">${i + 1}/${num}</span><span class="p-val">${formatMoney(installmentValue)}</span></div><span class="p-date">📅 ${formatDate(pDate.toISOString().split('T')[0])}</span></div>`;
+}
+html += '</div>'; document.getElementById('parcelamentoPreview').innerHTML = html;
+}
+
+function saveParcelamento() {
+const transId = document.getElementById('parcelamentoTransId').value;
+const totalValue = parseMoney(document.getElementById('parcelamentoValue').value);
+const num = parseInt(document.getElementById('parcelamentoNum').value) || 1;
+const date = document.getElementById('parcelamentoDate').value || today();
+if (!totalValue || !num || !date) return showToast('Preencha todos os campos', 'error');
+let transactions = DB.get('transactions'); const t = transactions.find(x => x.id === transId); if (!t) return;
+transactions = transactions.filter(x => x.groupId !== t.groupId);
+const groupId = genId(); const installmentValue = Math.round((totalValue / num) * 100) / 100;
+const baseDate = new Date(date);
+for (let i = 0; i < num; i++) {
+const pDate = new Date(baseDate); pDate.setMonth(pDate.getMonth() + i); if (pDate.getDate() !== baseDate.getDate()) pDate.setDate(0);
+transactions.push({ id: genId(), groupId, type: t.type, description: t.description, value: i === num - 1 ? Math.round((totalValue - installmentValue * (num - 1)) * 100) / 100 : installmentValue, totalValue: totalValue, personId: t.personId || '', categoryId: t.categoryId, accountId: t.accountId, date: pDate.toISOString().split('T')[0], createdAt: t.createdAt || t.date, status: 'pendente', installments: num, installmentCurrent: i + 1, observation: t.observation || '' });
+}
+DB.set('transactions', transactions); closeModal('modalParcelamento'); refreshAll(); showToast('Parcelamento atualizado!');
+}
+
+// --- PESSOAS (CRUD) ---
+function renderPersons() {
+const pers = DB.get('persons');
+const tbody = document.getElementById('personsTable');
+if (pers.length === 0) { tbody.innerHTML = '<tr><td colspan="3"><div class="empty-state"><div class="icon">👤</div><p>Nenhuma pessoa cadastrada</p></div></td></tr>'; return; }
+tbody.innerHTML = pers.map(p => `<tr>
+<td style="font-weight:600;">${p.name}</td>
+<td><span style="display:inline-block;width:24px;height:24px;border-radius:6px;background:${p.color};"></span></td>
+<td><div class="actions-cell"><button class="btn btn-sm btn-outline" onclick="editPerson('${p.id}')">✏️ Editar</button><button class="btn btn-sm btn-danger" onclick="deletePerson('${p.id}')">🗑️</button></div></td>
+</tr>`).join('');
+}
+function openPersonModal() {
+document.getElementById('perId').value = ''; document.getElementById('perName').value = '';
+document.getElementById('perColor').value = '#e17055';
+document.getElementById('modalPersonTitle').textContent = '➕ Nova Pessoa';
+openModal('modalPerson');
+}
+function editPerson(id) {
+const pers = DB.get('persons'); const p = pers.find(x => x.id === id); if (!p) return;
+document.getElementById('perId').value = p.id; document.getElementById('perName').value = p.name;
+document.getElementById('perColor').value = p.color;
+document.getElementById('modalPersonTitle').textContent = '✏️ Editar Pessoa';
+openModal('modalPerson');
+}
+function savePerson() {
+const id = document.getElementById('perId').value;
+const name = document.getElementById('perName').value.trim();
+const color = document.getElementById('perColor').value;
+if (!name) return showToast('Informe o nome da pessoa', 'error');
+let pers = DB.get('persons');
+if (id) { const idx = pers.findIndex(p => p.id === id); if (idx >= 0) { pers[idx].name = name; pers[idx].color = color; } showToast('Pessoa atualizada!'); }
+else { pers.push({ id: genId(), name, color }); showToast('Pessoa criada!'); }
+DB.set('persons', pers); closeModal('modalPerson'); refreshAll();
+}
+function deletePerson(id) {
+const transactions = DB.get('transactions');
+const hasTrans = transactions.some(t => t.personId === id);
+if (hasTrans) { if (!confirm('Esta pessoa possui transações vinculadas. Deseja excluir mesmo assim?')) return; }
+else { if (!confirm('Tem certeza que deseja excluir esta pessoa?')) return; }
+let pers = DB.get('persons'); pers = pers.filter(p => p.id !== id);
+DB.set('persons', pers); refreshAll(); showToast('Pessoa excluída!', 'error');
+}
+
+// --- CATEGORIAS & CONTAS ---
+function renderCategories() {
+const cats = DB.get('categories'); const tbody = document.getElementById('categoriesTable');
+if (cats.length === 0) { tbody.innerHTML = '<tr><td colspan="3"><div class="empty-state"><div class="icon">🏷️</div><p>Nenhuma categoria cadastrada</p></div></td></tr>'; return; }
+tbody.innerHTML = cats.map(c => `<tr><td style="font-weight:600;">${c.name}</td><td><span style="display:inline-block;width:24px;height:24px;border-radius:6px;background:${c.color};"></span></td><td><div class="actions-cell"><button class="btn btn-sm btn-outline" onclick="editCategory('${c.id}')">✏️ Editar</button><button class="btn btn-sm btn-danger" onclick="deleteCategory('${c.id}')">🗑️</button></div></td></tr>`).join('');
+}
+function openCategoryModal() { document.getElementById('catId').value = ''; document.getElementById('catName').value = ''; document.getElementById('catColor').value = '#6c5ce7'; document.getElementById('modalCategoryTitle').textContent = '➕ Nova Categoria'; openModal('modalCategory'); }
+function editCategory(id) { const cats = DB.get('categories'); const c = cats.find(x => x.id === id); if (!c) return; document.getElementById('catId').value = c.id; document.getElementById('catName').value = c.name; document.getElementById('catColor').value = c.color; document.getElementById('modalCategoryTitle').textContent = '✏️ Editar Categoria'; openModal('modalCategory'); }
+function saveCategory() { const id = document.getElementById('catId').value; const name = document.getElementById('catName').value.trim(); const color = document.getElementById('catColor').value; if (!name) return showToast('Informe o nome da categoria', 'error'); let cats = DB.get('categories'); if (id) { const idx = cats.findIndex(c => c.id === id); if (idx >= 0) { cats[idx].name = name; cats[idx].color = color; } showToast('Categoria atualizada!'); } else { cats.push({ id: genId(), name, color }); showToast('Categoria criada!'); } DB.set('categories', cats); closeModal('modalCategory'); refreshAll(); }
+function deleteCategory(id) { const transactions = DB.get('transactions'); const hasTrans = transactions.some(t => t.categoryId === id); if (hasTrans) { if (!confirm('Esta categoria possui transações vinculadas. Deseja excluir mesmo assim?')) return; } else { if (!confirm('Tem certeza que deseja excluir esta categoria?')) return; } let cats = DB.get('categories'); cats = cats.filter(c => c.id !== id); DB.set('categories', cats); refreshAll(); showToast('Categoria excluída!', 'error'); }
+
+function renderAccounts() {
+const accs = DB.get('accounts'); const transactions = DB.get('transactions');
+const tbody = document.getElementById('accountsTable');
+if (accs.length === 0) { tbody.innerHTML = '<tr><td colspan="4"><div class="empty-state"><div class="icon">🏦</div><p>Nenhuma conta cadastrada</p></div></td></tr>'; return; }
+tbody.innerHTML = accs.map(a => {
+let balance = a.balance || 0;
+transactions.forEach(t => { if (t.status === 'pago') {
+if (t.type === 'receita' && t.accountId === a.id) balance += t.value;
+else if (t.type === 'despesa' && t.accountId === a.id) balance -= t.value;
+else if (t.type === 'transferencia') { if (t.transferFromAccountId === a.id && !t.isTransferEntry) balance -= t.value; else if (t.transferToAccountId === a.id && t.isTransferEntry) balance += t.value; }
+} });
+return `<tr><td style="font-weight:600;">${a.name}</td><td style="color:${balance >= 0 ? 'var(--green2)' : 'var(--red2)'};font-weight:700;">${formatMoney(balance)}</td><td>${a.desc || '-'}</td>
+<td><div class="actions-cell"><button class="btn btn-sm btn-outline" onclick="editAccount('${a.id}')">✏️ Editar</button><button class="btn btn-sm btn-danger" onclick="deleteAccount('${a.id}')">🗑️</button></div></td></tr>`;
+}).join('');
+}
+function openAccountModal() { document.getElementById('accId').value = ''; document.getElementById('accName').value = ''; document.getElementById('accBalance').value = ''; document.getElementById('accDesc').value = ''; document.getElementById('modalAccountTitle').textContent = '➕ Nova Conta'; openModal('modalAccount'); }
+function editAccount(id) { const accs = DB.get('accounts'); const a = accs.find(x => x.id === id); if (!a) return; document.getElementById('accId').value = a.id; document.getElementById('accName').value = a.name; document.getElementById('accBalance').value = a.balance; document.getElementById('accDesc').value = a.desc || ''; document.getElementById('modalAccountTitle').textContent = '✏️ Editar Conta'; openModal('modalAccount'); }
+function saveAccount() { const id = document.getElementById('accId').value; const name = document.getElementById('accName').value.trim(); const balance = parseFloat(document.getElementById('accBalance').value) || 0; const desc = document.getElementById('accDesc').value.trim(); if (!name) return showToast('Informe o nome da conta', 'error'); let accs = DB.get('accounts'); if (id) { const idx = accs.findIndex(a => a.id === id); if (idx >= 0) { accs[idx].name = name; accs[idx].balance = balance; accs[idx].desc = desc; } showToast('Conta atualizada!'); } else { accs.push({ id: genId(), name, balance, desc }); showToast('Conta criada!'); } DB.set('accounts', accs); closeModal('modalAccount'); refreshAll(); }
+function deleteAccount(id) { const transactions = DB.get('transactions'); const hasTrans = transactions.some(t => t.accountId === id || t.transferFromAccountId === id || t.transferToAccountId === id); if (hasTrans) { if (!confirm('Esta conta possui transações vinculadas. Deseja excluir mesmo assim?')) return; } else { if (!confirm('Tem certeza que deseja excluir esta conta?')) return; } let accs = DB.get('accounts'); accs = accs.filter(a => a.id !== id); DB.set('accounts', accs); refreshAll(); showToast('Conta excluída!', 'error'); }
+
+// --- RELATÓRIOS E IMPRESSÃO ---
+function generateReport() {
+const dateStart = document.getElementById('reportDateStart').value;
+const dateEnd = document.getElementById('reportDateEnd').value;
+const selectedPersons = getSelectedReportPersons();
+const selectedCats = getSelectedReportCategories();
+const status = document.getElementById('reportStatus').value;
+const type = document.getElementById('reportType').value;
+let transactions = DB.get('transactions');
+if (dateStart) transactions = transactions.filter(t => t.date >= dateStart);
+if (dateEnd) transactions = transactions.filter(t => t.date <= dateEnd);
+if (selectedPersons.length > 0) transactions = transactions.filter(t => selectedPersons.includes(t.personId));
+if (selectedCats.length > 0) transactions = transactions.filter(t => selectedCats.includes(t.categoryId));
+if (status) transactions = transactions.filter(t => t.status === status);
+if (type) transactions = transactions.filter(t => t.type === type);
+transactions.sort((a, b) => a.date.localeCompare(b.date));
+const cats = DB.get('categories'); const accs = DB.get('accounts'); const pers = DB.get('persons');
+let totalReceita = 0, totalDespesa = 0, totalPago = 0, totalPendente = 0;
+transactions.forEach(t => {
+if (t.type === 'receita') totalReceita += t.value; else if (t.type === 'despesa') totalDespesa += t.value;
+if (t.status === 'pago') { if (t.type === 'receita') totalPago += t.value; else if (t.type === 'despesa') totalPago -= t.value; } else { if (t.type === 'receita') totalPendente += t.value; else if (t.type === 'despesa') totalPendente += t.value; }
+});
+const saldo = totalReceita - totalDespesa;
+const selectedCatNames = selectedCats.map(id => { const c = cats.find(x => x.id === id); return c ? c.name : ''; }).filter(n => n);
+const selectedPersonNames = selectedPersons.map(id => { const p = pers.find(x => x.id === id); return p ? p.name : ''; }).filter(n => n);
+let html = `
+<div class="cards-row">
+<div class="stat-card receita"><div class="label">Total Receitas</div><div class="value">${formatMoney(totalReceita)}</div></div>
+<div class="stat-card despesa"><div class="label">Total Despesas</div><div class="value">${formatMoney(totalDespesa)}</div></div>
+<div class="stat-card saldo"><div class="label">Saldo</div><div class="value">${formatMoney(saldo)}</div></div>
+<div class="stat-card pendente"><div class="label">Recebido/Pago</div><div class="value">${formatMoney(Math.abs(totalPago))}</div></div>
+</div>
+${selectedPersonNames.length > 0 ? `<div style="margin:15px 0;padding:12px;background:var(--card2);border-radius:8px;"><strong style="color:var(--accent2);">👤 Pessoas Selecionadas:</strong> <span style="margin-left:8px;">${selectedPersonNames.join(', ')}</span></div>` : ''}
+${selectedCatNames.length > 0 ? `<div style="margin:15px 0;padding:12px;background:var(--card2);border-radius:8px;"><strong style="color:var(--accent2);">🏷️ Categorias Selecionadas:</strong> <span style="margin-left:8px;">${selectedCatNames.join(', ')}</span></div>` : ''}
+<div class="table-wrap"><div class="table-toolbar"><span class="title">📋 Detalhamento (${transactions.length} registros)</span></div>
+<table><thead><tr><th>Data Cadastro</th><th>Data Venc.</th><th>Descrição</th><th>Pessoa</th><th>Categoria</th><th>Conta</th><th>Valor</th><th>Parcela</th><th>Tipo</th><th>Status</th></tr></thead><tbody>`;
+if (transactions.length === 0) { html += '<tr><td colspan="9"><div class="empty-state"><div class="icon">📭</div><p>Nenhum registro encontrado</p></div></td></tr>'; }
+else {
+transactions.forEach(t => {
+const cat = cats.find(c => c.id === t.categoryId) || { name: '-', color: '#888' };
+const per = pers.find(p => p.id === t.personId) || { name: '—', color: '#888' };
+const accId = t.type === 'transferencia' ? (t.transferToAccountId || t.accountId) : t.accountId;
+const acc = accs.find(a => a.id === accId) || { name: '-' };
+const fromAcc = t.type === 'transferencia' && t.transferFromAccountId ? (accs.find(a => a.id === t.transferFromAccountId) || { name: '' }) : null;
+const accDisplay = fromAcc ? `${fromAcc.name} → ${acc.name}` : acc.name;
+const parcelasInfo = t.installments > 1 ? `${t.installmentCurrent}/${t.installments}` : '-';
+const obsIcon = t.observation ? ` 💬` : '';
+const typeBadge = t.type === 'receita' ? 'badge-receita' : t.type === 'despesa' ? 'badge-despesa' : 'badge-transfer';
+const typeText = t.type === 'receita' ? '↑ Receita' : t.type === 'despesa' ? '↓ Despesa' : '🔄 Transferência';
+const valorColor = t.type === 'receita' ? 'var(--green2)' : t.type === 'despesa' ? 'var(--red2)' : 'var(--transfer2)';
+html += `<tr title="${t.observation || ''}"><td>${formatDate(t.createdAt || t.date)}</td><td>${formatDate(t.date)}</td><td>${t.description}${obsIcon}</td><td><span style="color:${per.color}">●</span> ${per.name}</td><td><span style="color:${cat.color}">●</span> ${cat.name}</td><td>${accDisplay}</td><td style="color:${valorColor};font-weight:700;">${formatMoney(t.value)}</td><td style="text-align:center;">${parcelasInfo}</td><td><span class="badge ${typeBadge}">${typeText}</span></td><td><span class="badge ${t.status === 'pago' ? 'badge-pago' : 'badge-pendente'}">${t.status === 'pago' ? '✓ Pago' : '⏳ Pendente'}</span></td></tr>`;
+});
+}
+html += '</tbody></table></div>';
+document.getElementById('reportResults').innerHTML = html;
+showToast('Relatório gerado!', 'info');
+}
+
+function printReport() {
+  const dateStart = document.getElementById('reportDateStart').value;
+  const dateEnd = document.getElementById('reportDateEnd').value;
+  const selectedPersons = getSelectedReportPersons();
+  const selectedCats = getSelectedReportCategories();
+  const status = document.getElementById('reportStatus').value;
+  const type = document.getElementById('reportType').value;
+  let transactions = DB.get('transactions');
+  if (dateStart) transactions = transactions.filter(t => t.date >= dateStart);
+  if (dateEnd) transactions = transactions.filter(t => t.date <= dateEnd);
+  if (selectedPersons.length > 0) transactions = transactions.filter(t => selectedPersons.includes(t.personId));
+  if (selectedCats.length > 0) transactions = transactions.filter(t => selectedCats.includes(t.categoryId));
+  if (status) transactions = transactions.filter(t => t.status === status);
+  if (type) transactions = transactions.filter(t => t.type === type);
+  transactions.sort((a, b) => a.date.localeCompare(b.date));
+  const cats = DB.get('categories'); const accs = DB.get('accounts'); const pers = DB.get('persons');
+  let totalReceita = 0, totalDespesa = 0, totalPago = 0, totalPendente = 0;
+  transactions.forEach(t => {
+    if (t.type === 'receita') totalReceita += t.value; else if (t.type === 'despesa') totalDespesa += t.value;
+    if (t.status === 'pago') { if (t.type === 'receita') totalPago += t.value; else if (t.type === 'despesa') totalPago -= t.value; } else { if (t.type === 'receita') totalPendente += t.value; else if (t.type === 'despesa') totalPendente += t.value; }
+  });
+  const totalGeral = totalReceita - totalDespesa;
+  const selectedCatNames = selectedCats.map(id => { const c = cats.find(x => x.id === id); return c ? c.name : ''; }).filter(n => n);
+  const selectedPersonNames = selectedPersons.map(id => { const p = pers.find(x => x.id === id); return p ? p.name : ''; }).filter(n => n);
+
+  let printHtml = `
+    <div class="print-header">
+        <h1>💰 Relatório Financeiro</h1>
+        <p class="print-date">Gerado em: ${new Date().toLocaleDateString('pt-BR')} às ${new Date().toLocaleTimeString('pt-BR')}</p>
+    </div>
+    <div class="print-filters">
+      <div class="filter-row">
+        <span class="filter-item"><strong>Período:</strong> ${formatDate(dateStart)} até ${formatDate(dateEnd)}</span>
+        ${status ? `<span class="filter-item"><strong>Status:</strong> ${status === 'pago' ? '✓ Pago' : '⏳ Pendente'}</span>` : ''}
+        ${type ? `<span class="filter-item"><strong>Tipo:</strong> ${type === 'receita' ? '↑ Receitas' : '↓ Despesas'}</span>` : ''}
+        ${selectedPersonNames.length > 0 ? `<span class="filter-item"><strong>Pessoas:</strong> ${selectedPersonNames.join(', ')}</span>` : ''}
+      </div>
+      ${selectedCatNames.length > 0 ? `<div class="print-categories">${selectedCatNames.map(name => `<span class="print-category-tag">${name}</span>`).join('')}</div>` : ''}
+    </div>
+    <table class="print-table">
+      <thead><tr><th>Data Cadastro</th><th>Data Venc.</th><th>Descrição</th><th>Pessoa</th><th>Categoria</th><th>Conta</th><th class="col-valor">Valor</th><th>Parcela</th><th>Tipo</th><th>Status</th></tr></thead><tbody>`;
+
+  transactions.forEach(t => {
+    const cat = cats.find(c => c.id === t.categoryId) || { name: '-' };
+    const per = pers.find(p => p.id === t.personId) || { name: '—' };
+    const accId = t.type === 'transferencia' ? (t.transferToAccountId || t.accountId) : t.accountId;
+    const acc = accs.find(a => a.id === accId) || { name: '-' };
+    const fromAcc = t.type === 'transferencia' && t.transferFromAccountId ? (accs.find(a => a.id === t.transferFromAccountId) || { name: '' }) : null;
+    const accDisplay = fromAcc ? `${fromAcc.name} → ${acc.name}` : acc.name;
+    const parcelasInfo = t.installments > 1 ? `${t.installmentCurrent}/${t.installments}` : '-';
+    const valorClass = t.type === 'receita' ? 'receita' : t.type === 'despesa' ? 'despesa' : 'transfer';
+    const statusClass = t.status === 'pago' ? 'col-status-pago' : 'col-status-pendente';
+    const statusText = t.status === 'pago' ? '✓ Pago' : '⏳ Pendente';
+    const typeText = t.type === 'receita' ? 'Receita' : t.type === 'despesa' ? 'Despesa' : 'Transferência';
+    
+    printHtml += `<tr>
+      <td>${formatDate(t.createdAt || t.date)}</td>
+      <td>${formatDate(t.date)}</td>
+      <td>${t.description}${t.observation ? ' 💬' : ''}</td>
+      <td><span style="color:${per.color || '#888'}; font-weight:bold;">●</span> ${per.name}</td>
+      <td><span style="color:${cat.color}; font-weight:bold;">●</span> ${cat.name}</td>
+      <td>${accDisplay}</td>
+      <td class="col-valor ${valorClass}">${formatMoney(t.value)}</td>
+      <td>${parcelasInfo}</td>
+      <td>${typeText}</td>
+      <td class="${statusClass}">${statusText}</td>
+    </tr>`;
+  });
+
+  printHtml += `</tbody></table>
+    <div class="print-summary-box">
+      <h3>📊 RESUMO DOS TOTAIS</h3>
+      <div class="summary-grid-top">
+        <div class="summary-card green-border"><div class="summary-label">Total Receitas</div><div class="summary-value green-text">${formatMoney(totalReceita)}</div></div>
+        <div class="summary-card red-border"><div class="summary-label">Total Despesas</div><div class="summary-value red-text">${formatMoney(totalDespesa)}</div></div>
+        <div class="summary-card blue-border"><div class="summary-label">Saldo Total</div><div class="summary-value" style="color:${totalGeral >= 0 ? '#00b894' : '#e17055'}">${formatMoney(totalGeral)}</div></div>
+      </div>
+      <div class="summary-grid-bottom">
+        <div class="summary-card green-border"><div class="summary-label">💵 Total Pago</div><div class="summary-value green-text">${formatMoney(Math.abs(totalPago))}</div></div>
+        <div class="summary-card yellow-border"><div class="summary-label">⏳ Total Pendente</div><div class="summary-value yellow-text">${formatMoney(Math.abs(totalPendente))}</div></div>
+      </div>
+    </div>
+    <div class="print-footer"><p>Sistema Financeiro _ V.3.0 Pro • ${new Date().toLocaleDateString('pt-BR')}</p><p class="total-geral">Total de Registros: ${transactions.length}</p></div>`;
+
+  document.getElementById('printSection').innerHTML = printHtml; window.print();
+}
+
+function exportBackup() {
+const data = {};
+for (let i = 0; i < localStorage.length; i++) {
+const key = localStorage.key(i);
+if (key.startsWith('fin_')) { try { data[key] = JSON.parse(localStorage.getItem(key)); } catch(e) { data[key] = localStorage.getItem(key); } }
+}
+data._metadata = { exportDate: new Date().toISOString(), version: '3.0 Pro', app: 'Sistema Financeiro Pro' };
+const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+const url = URL.createObjectURL(blob);
+const a = document.createElement('a'); a.href = url;
+a.download = `backup_financeiro_${new Date().toISOString().split('T')[0]}.json`;
+document.body.appendChild(a); a.click(); document.body.removeChild(a); URL.revokeObjectURL(url);
+showToast('✅ Backup exportado com sucesso!');
+}
+
+function importBackup(input) {
+const file = input.files[0]; if (!file) return;
+if (!confirm('⚠️ ATENÇÃO: Isso substituirá TODOS os dados atuais. Deseja continuar?')) { input.value = ''; return; }
+const reader = new FileReader();
+reader.onload = function(e) {
+try {
+const data = JSON.parse(e.target.result);
+if (!data.fin_transactions && !data.fin_categories && !data.fin_accounts && !data.fin_persons) throw new Error('Arquivo inválido.');
+const keysToRemove = [];
+for (let i = 0; i < localStorage.length; i++) { const key = localStorage.key(i); if (key.startsWith('fin_')) keysToRemove.push(key); }
+keysToRemove.forEach(k => localStorage.removeItem(k));
+for (const [key, value] of Object.entries(data)) { if (key !== '_metadata') localStorage.setItem(key, JSON.stringify(value)); }
+showToast('✅ Backup restaurado com sucesso!'); refreshAll();
+} catch (err) { showToast('❌ Erro ao importar: ' + err.message, 'error'); }
+input.value = '';
+};
+reader.readAsText(file);
+}
+
+function clearAllData() {
+if (!confirm('🚨 TEM CERTEZA ABSOLUTA?\nIsso apagará TODOS os dados permanentemente.')) return;
+if (!confirm('Última chance! Confirma a exclusão total?')) return;
+const keysToRemove = [];
+for (let i = 0; i < localStorage.length; i++) { const key = localStorage.key(i); if (key.startsWith('fin_')) keysToRemove.push(key); }
+keysToRemove.forEach(k => localStorage.removeItem(k));
+init();
+showToast('🗑️ Todos os dados foram limpos.', 'info');
+}
+
+function openModal(id) { document.getElementById(id).classList.add('show'); }
+function closeModal(id) { document.getElementById(id).classList.remove('show'); }
+document.querySelectorAll('.modal-overlay').forEach(overlay => { overlay.addEventListener('click', (e) => { if (e.target === overlay) overlay.classList.remove('show'); }); });
+document.addEventListener('keydown', (e) => { if (e.key === 'Escape') document.querySelectorAll('.modal-overlay.show').forEach(m => m.classList.remove('show')); });
+
+init();
+syncFromServer();
+</script>
+<script defer src="https://static.cloudflareinsights.com/beacon.min.js/v4513226cdae34746b4dedf0b4dfa099e1781791509496" integrity="sha512-ZE9pZaUXND66v380QUtch/5sE9tPFh2zg45pR2PB0CVkCtOREv2AJKkSidISWkysEuQ0EH8faUU5du78bx87UQ==" data-cf-beacon='{"version":"2024.11.0","token":"75124c326cb447fe934cde04713ae013","r":1,"server_timing":{"name":{"cfCacheStatus":true,"cfEdge":true,"cfExtPri":true,"cfL4":true,"cfOrigin":true,"cfSpeedBrain":true},"location_startswith":null}}' crossorigin="anonymous"></script>
+</body>
+</html>
