@@ -778,7 +778,13 @@ async function syncFromServer(silent = false) {
         if (!response.ok) throw new Error('Falha ao carregar dados');
         const result = await response.json();
         const remoteUpdate = result.updatedAt || '';
-        if (result.state && Object.keys(result.state).length && !localDirty && remoteUpdate !== lastServerUpdate) { applyRemoteState(result.state); refreshAll(); }
+        const hasRemoteState = result.state && Object.keys(result.state).length > 0;
+        const firstServerLoad = !lastServerUpdate;
+        if (hasRemoteState && (firstServerLoad || (!localDirty && remoteUpdate !== lastServerUpdate))) {
+            applyRemoteState(result.state);
+            localDirty = false;
+            refreshAll();
+        }
         if (remoteUpdate) { lastServerUpdate = remoteUpdate; sessionStorage.setItem('finance_last_server_update', remoteUpdate); }
         if (!result.state || !Object.keys(result.state).length) {
             syncInFlight = false;
